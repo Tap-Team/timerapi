@@ -1,0 +1,17 @@
+/config
+/files
+./.vscode
+./.idea
+/build
+.tmp
+/docker-compose.yaml
+/Dockerfile
+/Makefile
+/internal/testdata
+/testdata
+/main.go
+/log.txt
+/tokentest
+/*.docx
+/*.go
+/.idea

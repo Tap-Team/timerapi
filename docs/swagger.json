@@ -1,0 +1,1015 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Timer API Swagger",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {},
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:12700",
+    "basePath": "/",
+    "paths": {
+        "/notifications": {
+            "get": {
+                "description": "get user unread notifications, notifications include delete or expire timer",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "NotificationsByUser",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/notification.NotificationDTO"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "delete all user notifications",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Delete",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/timers/:id": {
+            "put": {
+                "description": "update user timer",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "timers"
+                ],
+                "summary": "UpdateTimer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "timer id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "timer update settings",
+                        "name": "settings",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/timermodel.TimerSettings"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "delete user timer",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "timers"
+                ],
+                "summary": "DeleteTimer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "timer id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/timers/:id/reset": {
+            "patch": {
+                "description": "reset timer by timer id, only owner can reset timer, every subscriber (creator inclusive) will be send reset event, if timer is started, reset not pause, only update end time",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "timers"
+                ],
+                "summary": "ResetTimer",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "timer id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/timermodel.Timer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/timers/:id/start": {
+            "patch": {
+                "description": "start timer by timer id, only owner can start timer, every subscriber (creator inclusive) will be send start event",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "timers"
+                ],
+                "summary": "StartTimer",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "timer id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/timermodel.Timer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/timers/:id/stop": {
+            "patch": {
+                "description": "stop timer by timer id, only owner can stop timer, every subscriber (creator inclusive) will be send stop event",
+                "tags": [
+                    "timers"
+                ],
+                "summary": "StopTimer",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "timer id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/timers/:id/subscribe": {
+            "post": {
+                "description": "subscribe user on timer by id, user will see timer in subscriptions, get events and notificaitons",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "timers"
+                ],
+                "summary": "Subscribe",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "timer id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/timermodel.Timer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/timers/:id/subscribers": {
+            "get": {
+                "description": "return array of id users which subscribe on timer",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "timers"
+                ],
+                "summary": "TimerSubscribers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "timer id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/timers/:id/unsubscribe": {
+            "delete": {
+                "description": "unsubscribe user on timer by id, user wont see timer in subscriptions, get events and notificaitons",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "timers"
+                ],
+                "summary": "Unsubscribe",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "timer id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/timers/create": {
+            "post": {
+                "description": "create user timer",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "timers"
+                ],
+                "summary": "CreateTimer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "timer",
+                        "name": "timer",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/timermodel.CreateTimer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/timers/user": {
+            "get": {
+                "description": "get all user timers with offset and limit, timers include created by user and user subscriptions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "timers"
+                ],
+                "summary": "TimersByUser",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "offset",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/timermodel.Timer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/timers/user-created": {
+            "get": {
+                "description": "get user created timers with offset and limit",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "timers"
+                ],
+                "summary": "UserCreated",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "offset",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/timermodel.Timer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/timers/user-subscriptions": {
+            "get": {
+                "description": "get user subscriptions with offset and limit",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "timers"
+                ],
+                "summary": "UserSubscriptions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "offset",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/timermodel.Timer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "echoconfig.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "notification.NotificationDTO": {
+            "type": "object",
+            "properties": {
+                "timer": {
+                    "$ref": "#/definitions/timermodel.Timer"
+                },
+                "type": {
+                    "$ref": "#/definitions/notification.NotificationType"
+                }
+            }
+        },
+        "notification.NotificationType": {
+            "type": "string",
+            "enum": [
+                "notification_expired",
+                "notification_delete"
+            ],
+            "x-enum-varnames": [
+                "Expired",
+                "Delete"
+            ]
+        },
+        "timerfields.Color": {
+            "type": "string",
+            "enum": [
+                "DEFAULT",
+                "RED",
+                "GREEN",
+                "BLUE",
+                "PURPLE",
+                "YELLOW"
+            ],
+            "x-enum-varnames": [
+                "DEFAULT",
+                "RED",
+                "GREEN",
+                "BLUE",
+                "PURPLE",
+                "YELLOW"
+            ]
+        },
+        "timermodel.CreateTimer": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "$ref": "#/definitions/timerfields.Color"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "endTime": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "startTime": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "utc": {
+                    "type": "integer"
+                },
+                "withMusic": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "timermodel.Timer": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "$ref": "#/definitions/timerfields.Color"
+                },
+                "creator": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "duration": {
+                    "type": "integer"
+                },
+                "endTime": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isPaused": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pauseTime": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "utc": {
+                    "type": "integer"
+                },
+                "withMusic": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "timermodel.TimerSettings": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "$ref": "#/definitions/timerfields.Color"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "withMusic": {
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+}

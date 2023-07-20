@@ -1,0 +1,15 @@
+vk:
+  secret_key: <VK MINI APP KEY, ONLY USING IN LAUNCH PARAMS MIDDLEWARE>
+  debug_key: <DEBUG KEY, ONLY IN DEBUG MODE, SET QUERY PARAM 'debug' TO debug_key VALUE TO SKIP VK MIDDLEWARE>
+postgres:
+  local_url:  <LOCAL POSTGRES URL>
+  docker_url: <POSTGRES URL IN DOCKER MODE>
+redis:
+  local_url:  <LOCAL REDIS URL>
+  docker_url: <REDIS URL IN DOCKER MODE>
+server:
+  host: <SERVER HOST>
+  port: <SERVER PORT>
+ticker:
+  local_url:  <TICKER SERVICE LOCAL URL>
+  docker_url: <TICKER SERVICE IN DOCKER URL>

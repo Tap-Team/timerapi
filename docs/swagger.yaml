@@ -1,0 +1,688 @@
+basePath: /
+definitions:
+  echoconfig.ErrorResponse:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+  notification.NotificationDTO:
+    properties:
+      timer:
+        $ref: '#/definitions/timermodel.Timer'
+      type:
+        $ref: '#/definitions/notification.NotificationType'
+    type: object
+  notification.NotificationType:
+    enum:
+    - notification_expired
+    - notification_delete
+    type: string
+    x-enum-varnames:
+    - Expired
+    - Delete
+  timerfields.Color:
+    enum:
+    - DEFAULT
+    - RED
+    - GREEN
+    - BLUE
+    - PURPLE
+    - YELLOW
+    type: string
+    x-enum-varnames:
+    - DEFAULT
+    - RED
+    - GREEN
+    - BLUE
+    - PURPLE
+    - YELLOW
+  timermodel.CreateTimer:
+    properties:
+      color:
+        $ref: '#/definitions/timerfields.Color'
+      description:
+        type: string
+      endTime:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      startTime:
+        type: string
+      type:
+        type: string
+      utc:
+        type: integer
+      withMusic:
+        type: boolean
+    type: object
+  timermodel.Timer:
+    properties:
+      color:
+        $ref: '#/definitions/timerfields.Color'
+      creator:
+        type: integer
+      description:
+        type: string
+      duration:
+        type: integer
+      endTime:
+        type: string
+      id:
+        type: string
+      isPaused:
+        type: boolean
+      name:
+        type: string
+      pauseTime:
+        type: string
+      type:
+        type: string
+      utc:
+        type: integer
+      withMusic:
+        type: boolean
+    type: object
+  timermodel.TimerSettings:
+    properties:
+      color:
+        $ref: '#/definitions/timerfields.Color'
+      description:
+        type: string
+      name:
+        type: string
+      withMusic:
+        type: boolean
+    type: object
+host: localhost:12700
+info:
+  contact: {}
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Timer API Swagger
+  version: "1.0"
+paths:
+  /notifications:
+    delete:
+      description: delete all user notifications
+      parameters:
+      - description: user id
+        in: query
+        name: vk_user_id
+        required: true
+        type: integer
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: Delete
+      tags:
+      - notifications
+    get:
+      description: get user unread notifications, notifications include delete or
+        expire timer
+      parameters:
+      - description: user id
+        in: query
+        name: vk_user_id
+        required: true
+        type: integer
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/notification.NotificationDTO'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: NotificationsByUser
+      tags:
+      - notifications
+  /timers/:id:
+    delete:
+      description: delete user timer
+      parameters:
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      - description: user id
+        in: query
+        name: vk_user_id
+        required: true
+        type: integer
+      - description: timer id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: DeleteTimer
+      tags:
+      - timers
+    put:
+      consumes:
+      - application/json
+      description: update user timer
+      parameters:
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      - description: user id
+        in: query
+        name: vk_user_id
+        required: true
+        type: integer
+      - description: timer id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: timer update settings
+        in: body
+        name: settings
+        required: true
+        schema:
+          $ref: '#/definitions/timermodel.TimerSettings'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: UpdateTimer
+      tags:
+      - timers
+  /timers/:id/reset:
+    patch:
+      description: reset timer by timer id, only owner can reset timer, every subscriber
+        (creator inclusive) will be send reset event, if timer is started, reset not
+        pause, only update end time
+      parameters:
+      - description: user id
+        in: query
+        name: vk_user_id
+        required: true
+        type: integer
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      - description: timer id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/timermodel.Timer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: ResetTimer
+      tags:
+      - timers
+  /timers/:id/start:
+    patch:
+      description: start timer by timer id, only owner can start timer, every subscriber
+        (creator inclusive) will be send start event
+      parameters:
+      - description: user id
+        in: query
+        name: vk_user_id
+        required: true
+        type: integer
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      - description: timer id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/timermodel.Timer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: StartTimer
+      tags:
+      - timers
+  /timers/:id/stop:
+    patch:
+      description: stop timer by timer id, only owner can stop timer, every subscriber
+        (creator inclusive) will be send stop event
+      parameters:
+      - description: user id
+        in: query
+        name: vk_user_id
+        required: true
+        type: integer
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      - description: timer id
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: StopTimer
+      tags:
+      - timers
+  /timers/:id/subscribe:
+    post:
+      description: subscribe user on timer by id, user will see timer in subscriptions,
+        get events and notificaitons
+      parameters:
+      - description: user id
+        in: query
+        name: vk_user_id
+        required: true
+        type: integer
+      - description: timer id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/timermodel.Timer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: Subscribe
+      tags:
+      - timers
+  /timers/:id/subscribers:
+    get:
+      description: return array of id users which subscribe on timer
+      parameters:
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      - description: user id
+        in: query
+        name: vk_user_id
+        required: true
+        type: integer
+      - description: timer id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: integer
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: TimerSubscribers
+      tags:
+      - timers
+  /timers/:id/unsubscribe:
+    delete:
+      description: unsubscribe user on timer by id, user wont see timer in subscriptions,
+        get events and notificaitons
+      parameters:
+      - description: user id
+        in: query
+        name: vk_user_id
+        required: true
+        type: integer
+      - description: timer id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: Unsubscribe
+      tags:
+      - timers
+  /timers/create:
+    post:
+      consumes:
+      - application/json
+      description: create user timer
+      parameters:
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      - description: user id
+        in: query
+        name: vk_user_id
+        required: true
+        type: integer
+      - description: timer
+        in: body
+        name: timer
+        required: true
+        schema:
+          $ref: '#/definitions/timermodel.CreateTimer'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: CreateTimer
+      tags:
+      - timers
+  /timers/user:
+    get:
+      description: get all user timers with offset and limit, timers include created
+        by user and user subscriptions
+      parameters:
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      - description: user id
+        in: query
+        name: vk_user_id
+        required: true
+        type: integer
+      - description: offset
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - description: limit
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/timermodel.Timer'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: TimersByUser
+      tags:
+      - timers
+  /timers/user-created:
+    get:
+      description: get user created timers with offset and limit
+      parameters:
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      - description: user id
+        in: query
+        name: vk_user_id
+        required: true
+        type: integer
+      - description: offset
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - description: limit
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/timermodel.Timer'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: UserCreated
+      tags:
+      - timers
+  /timers/user-subscriptions:
+    get:
+      description: get user subscriptions with offset and limit
+      parameters:
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      - description: user id
+        in: query
+        name: vk_user_id
+        required: true
+        type: integer
+      - description: offset
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - description: limit
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/timermodel.Timer'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: UserSubscriptions
+      tags:
+      - timers
+swagger: "2.0"
