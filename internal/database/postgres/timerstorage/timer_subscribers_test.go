@@ -57,6 +57,10 @@ func TestTimerWithSubscribers(t *testing.T) {
 		err = testTimerStorage.DeleteTimer(ctx, timer.ID)
 		require.NoError(t, err, "delete timer failed")
 	}
+
+	timersSubsList, err = testTimerStorage.TimerWithSubscribers(ctx, 0, math.MaxInt)
+	require.NoError(t, err, "get timers with subscribers failed")
+	require.True(t, len(timersSubsList) == 0, "timer with subscribers return deleted timers")
 }
 
 func sliceEqual[T comparable](slice1, slice2 []T) bool {

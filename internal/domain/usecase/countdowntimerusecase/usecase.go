@@ -12,7 +12,6 @@ import (
 	"github.com/Tap-Team/timerapi/pkg/exception"
 	"github.com/Tap-Team/timerapi/pkg/saga"
 	"github.com/google/uuid"
-	"golang.org/x/sync/errgroup"
 )
 
 const _PROVIDER = "internal/domain/usecase/countdowntimerusecase"
@@ -55,42 +54,32 @@ func (uc *UseCase) Stop(ctx context.Context, timerId uuid.UUID, userId int64, pa
 		return exception.Wrap(err, exception.NewCause("check timer", "Stop", _PROVIDER))
 	}
 	if timer.IsPaused {
-		return exception.Wrap(timererror.ExceptionTimerIsPaused, exception.NewCause("check timer not paused", "Stop", _PROVIDER))
+		return exception.Wrap(timererror.ExceptionTimerIsPaused(), exception.NewCause("check timer not paused", "Stop", _PROVIDER))
 	}
 
 	saga := new(saga.Saga)
 	defer saga.Rollback()
-	errgr, grctx := errgroup.WithContext(ctx)
 
 	ptime := amidtime.DateTime(time.Unix(pauseTime, 0))
 
 	// stop timer in timer service
-	errgr.Go(func() error {
-		err := uc.timerService.Stop(grctx, timerId)
-		if err != nil {
-			return exception.Wrap(err, exception.NewCause("stop in timer service", "Stop", _PROVIDER))
-		}
-		saga.Register(func() {
-			uc.timerService.Start(ctx, timerId, timer.EndTime.Unix())
-		})
-		return nil
-	})
-	// set pause time in storage
-	errgr.Go(func() error {
-		err := uc.updater.UpdatePauseTime(grctx, timerId, ptime, true)
-		if err != nil {
-			return exception.Wrap(err, exception.NewCause("update pause time in storage", "Stop", _PROVIDER))
-		}
-		saga.Register(func() {
-			uc.updater.UpdatePauseTime(ctx, timerId, amidtime.DateTime{}, false)
-		})
-		return nil
+	err = uc.timerService.Stop(ctx, timerId)
+	if err != nil {
+		return exception.Wrap(err, exception.NewCause("stop in timer service", "Stop", _PROVIDER))
+	}
+	saga.Register(func() {
+		uc.timerService.Start(ctx, timerId, timer.EndTime.Unix())
 	})
 
-	err = errgr.Wait()
+	// set pause time in storage
+	err = uc.updater.UpdatePauseTime(ctx, timerId, ptime, true)
 	if err != nil {
-		return err
+		return exception.Wrap(err, exception.NewCause("update pause time in storage", "Stop", _PROVIDER))
 	}
+	saga.Register(func() {
+		uc.updater.UpdatePauseTime(ctx, timerId, amidtime.DateTime{}, false)
+	})
+
 	uc.sender.Send(timerevent.NewStop(timerId, ptime))
 	saga.OK()
 	return nil
@@ -105,7 +94,7 @@ func (uc *UseCase) Start(ctx context.Context, timerId uuid.UUID, userId int64) (
 		return nil, exception.Wrap(err, exception.NewCause("check timer", "Stop", _PROVIDER))
 	}
 	if !timer.IsPaused {
-		return nil, exception.Wrap(timererror.ExceptionTimerIsPlaying, exception.NewCause("check timer is paused", "Stop", _PROVIDER))
+		return nil, exception.Wrap(timererror.ExceptionTimerIsPlaying(), exception.NewCause("check timer is paused", "Stop", _PROVIDER))
 	}
 
 	timeInPause := time.Since(timer.PauseTime.T())
@@ -114,42 +103,27 @@ func (uc *UseCase) Start(ctx context.Context, timerId uuid.UUID, userId int64) (
 
 	saga := new(saga.Saga)
 	defer saga.Rollback()
-	errgr, grctx := errgroup.WithContext(ctx)
 
-	// update end time
-	errgr.Go(func() error {
-		err := uc.updater.UpdateTime(grctx, timerId, endTime)
-		if err != nil {
-			return exception.Wrap(err, exception.NewCause("update end time in storage", "Start", _PROVIDER))
-		}
-		saga.Register(func() { uc.updater.UpdateTime(ctx, timerId, timer.EndTime) })
-		return nil
-	})
+	err = uc.updater.UpdateTime(ctx, timerId, endTime)
+	if err != nil {
+		return nil, exception.Wrap(err, exception.NewCause("update end time in storage", "Start", _PROVIDER))
+	}
+	saga.Register(func() { uc.updater.UpdateTime(ctx, timerId, timer.EndTime) })
 
 	// update status in storage
-	errgr.Go(func() error {
-		err := uc.updater.UpdatePauseTime(grctx, timerId, amidtime.DateTime{}, false)
-		if err != nil {
-			return exception.Wrap(err, exception.NewCause("update pause time in storage", "Start", _PROVIDER))
-		}
-		saga.Register(func() { uc.updater.UpdatePauseTime(ctx, timerId, timer.PauseTime, true) })
-		return nil
-	})
+	err = uc.updater.UpdatePauseTime(ctx, timerId, amidtime.DateTime{}, false)
+	if err != nil {
+		return nil, exception.Wrap(err, exception.NewCause("update pause time in storage", "Start", _PROVIDER))
+	}
+	saga.Register(func() { uc.updater.UpdatePauseTime(ctx, timerId, timer.PauseTime, true) })
 
 	// start timer in timer service
-	errgr.Go(func() error {
-		err := uc.timerService.Start(grctx, timerId, endTime.Unix())
-		if err != nil {
-			return exception.Wrap(err, exception.NewCause("start timer in timer service", "Start", _PROVIDER))
-		}
-		saga.Register(func() { uc.timerService.Stop(ctx, timerId) })
-		return nil
-	})
-
-	err = errgr.Wait()
+	err = uc.timerService.Start(ctx, timerId, endTime.Unix())
 	if err != nil {
-		return nil, err
+		return nil, exception.Wrap(err, exception.NewCause("start timer in timer service", "Start", _PROVIDER))
 	}
+	saga.Register(func() { uc.timerService.Stop(ctx, timerId) })
+
 	uc.sender.Send(timerevent.NewStart(timerId, endTime))
 	saga.OK()
 
@@ -198,7 +172,7 @@ func (uc *UseCase) checkCountDownTimer(ctx context.Context, timerId uuid.UUID, u
 		return nil, exception.Wrap(err, exception.NewCause("get timer by id", "checkAccess", _PROVIDER))
 	}
 	if timer.Creator != userId {
-		return nil, exception.Wrap(timererror.ExceptionUserForbidden, exception.NewCause("check creator", "checkAccess", _PROVIDER))
+		return nil, exception.Wrap(timererror.ExceptionUserForbidden(), exception.NewCause("check creator", "checkAccess", _PROVIDER))
 	}
 	return timer, nil
 }

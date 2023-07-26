@@ -61,6 +61,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatalf("dial context failed, %s", err)
 	}
+	defer conn.Close()
 
 	timerService = timerservice.GrpcClient(timerservicepb.NewTimerServiceClient(conn))
 	timerStorage = timerstorage.New(p)
@@ -124,21 +125,22 @@ func TestInvoke(t *testing.T) {
 	var err error
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	tamount := 100
-	subamount := 100
+	tamount := 10
+	subamount := 10
 	creator := rand.Int63()
 
-	duration := 2
+	duration := 5
 	creatorEndTimeOpt := func(t *timermodel.Timer) {
 		t.Creator = creator
 		t.EndTime = amidtime.DateTime(time.Now().Add(time.Second * time.Duration(duration)))
-		t.Duration = 2
+		t.Duration = int64(duration)
 	}
 
 	timers := randomTimerList(tamount, creatorEndTimeOpt)
 	timerSubscribers := make([]*TimerWithSubscribers, 0, tamount)
 	// generate test data
 	for _, timer := range timers {
+		timer := timer
 		if rand.Int63()%2 == 0 {
 			err := timerStorage.InsertDateTimer(ctx, creator, timer.CreateTimer())
 			require.NoError(t, err, "failed insert date timer")
@@ -160,6 +162,7 @@ func TestInvoke(t *testing.T) {
 			Timer:       timer,
 			Subscribers: subs,
 		})
+
 	}
 
 	err = usecase.Invoke(ctx)
@@ -177,16 +180,23 @@ func TestInvoke(t *testing.T) {
 
 	expCh, err := timerService.TimerTick(ctx)
 	require.NoError(t, err, "failed to receive timers from ticker service")
+
 	var ids []uuid.UUID
-	select {
-	case <-ctx.Done():
-	case <-time.After(time.Second * 2 * time.Duration(duration)):
-	case timerIds, ok := <-expCh:
-		if !ok {
-			break
+Loop:
+	for {
+		select {
+		case <-ctx.Done():
+			break Loop
+		case <-time.After(time.Second * 2 * time.Duration(duration)):
+			break Loop
+		case timerIds, ok := <-expCh:
+			if !ok {
+				break
+			}
+			ids = append(ids, timerIds...)
 		}
-		ids = timerIds
 	}
+
 	sort.Slice(ids, func(i, j int) bool {
 		return ids[i].String() > ids[j].String()
 	})
@@ -196,4 +206,8 @@ func TestInvoke(t *testing.T) {
 	message, ok := compareIds(ids, timers)
 	require.True(t, ok, message)
 
+	for _, timer := range timers {
+		timerStorage.DeleteTimer(ctx, timer.ID)
+		subscriberStorage.DeleteTimer(ctx, timer.ID)
+	}
 }

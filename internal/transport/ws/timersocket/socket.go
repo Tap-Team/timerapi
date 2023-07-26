@@ -27,44 +27,58 @@ type Streamer interface {
 	}
 }
 
-type ExpTimerStream interface {
-	NewStream(int64) interface {
+type NotificationStreamer interface {
+	NewUserStream(int64) interface {
 		Stream() <-chan notification.Notification
 		Close()
 	}
 }
 
 type TimerSocket struct {
-	streamer       Streamer
-	expTimerStream ExpTimerStream
+	streamer             Streamer
+	notificationStreamer NotificationStreamer
 }
 
 func New(
 	streamer Streamer,
-	expTimerStream ExpTimerStream,
+	expTimerStream NotificationStreamer,
 ) *TimerSocket {
 	return &TimerSocket{
-		streamer:       streamer,
-		expTimerStream: expTimerStream,
+		streamer:             streamer,
+		notificationStreamer: expTimerStream,
 	}
 }
 
 func Init(
 	e *echo.Group,
 	streamer Streamer,
-	utimerStream ExpTimerStream,
+	notificationStreamer NotificationStreamer,
 ) {
 	socket := &TimerSocket{
-		streamer:       streamer,
-		expTimerStream: utimerStream,
+		streamer:             streamer,
+		notificationStreamer: notificationStreamer,
 	}
 
 	e.GET("/ws/timer", socket.TimerWS)
 
 }
 
+// WSReadStream godoc
+//
+//	@Summary	Websocket
+//	@Description
+//	@Tags		ws
+//	@Param		vk_user_id	query	int64	true	"user id"
+//	@Param		debug		query	string	false	"you can add secret key to query for debug requests"
+//	@Produce	json
+//	@Param		subscribe\unsubscribe	body		timerevent.SubscribeEvent		true	"event to add\remove timers from event stream"
+//	@Success	200						{object}	notification.NotificationDTO	"notification"
+//	@Success	201						{object}	timerevent.ResetEvent			"reset event"
+//	@Success	202						{object}	timerevent.StopEvent			"stop event"
+//	@Success	203						{object}	timerevent.StartEvent			"start event"
+//	@Success	204						{object}	timerevent.UpdateEvent			"update event"
+//	@Router		/ws/timer [get]
 func (s *TimerSocket) TimerWS(c echo.Context) error {
-
 	// parse user id from query
 	userId, err := strconv.ParseInt(c.QueryParam("vk_user_id"), 10, 64)
 	if err != nil {
@@ -94,7 +108,7 @@ func (s *TimerSocket) TimerWS(c echo.Context) error {
 	readStream := WSReadStream(ctx, ws)
 
 	// stream of expired timers by user
-	notficationStream := s.expTimerStream.NewStream(userId)
+	notficationStream := s.notificationStreamer.NewUserStream(userId)
 
 	// close func
 	closeFunc := func() {

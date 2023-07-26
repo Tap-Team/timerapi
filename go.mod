@@ -4,9 +4,12 @@ go 1.20
 
 require (
 	github.com/docker/go-connections v0.4.0
+	github.com/go-kit/log v0.2.1
 	github.com/golang-migrate/migrate/v4 v4.16.2
+	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.5
 	github.com/jackc/pgx/v5 v5.4.1
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/redis/go-redis/v9 v9.0.5
@@ -16,10 +19,11 @@ require (
 	github.com/testcontainers/testcontainers-go v0.21.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.21.0
 	github.com/testcontainers/testcontainers-go/modules/redis v0.21.0
+	go.opentelemetry.io/otel/trace v1.3.0
 	golang.org/x/net v0.12.0
 	golang.org/x/sync v0.3.0
-	google.golang.org/grpc v1.51.0
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/grpc v1.53.0
+	google.golang.org/protobuf v1.30.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -36,6 +40,7 @@ require (
 	github.com/docker/distribution v2.8.2+incompatible // indirect
 	github.com/docker/docker v23.0.5+incompatible // indirect
 	github.com/docker/go-units v0.5.0 // indirect
+	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/spec v0.20.9 // indirect
@@ -70,6 +75,7 @@ require (
 	github.com/swaggo/files/v2 v2.0.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
+	go.opentelemetry.io/otel v1.3.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/crypto v0.11.0 // indirect
 	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea // indirect

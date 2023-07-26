@@ -70,23 +70,30 @@ func (c *timerServiceClientGrpc) serviceStream(ctx context.Context) (<-chan []uu
 	}
 	go func() {
 		// in loop receive values
+	Loop:
 		for {
-			event, err := tick.Recv()
-			// if err is io.EOF break Loop
-			if errors.Is(err, io.EOF) {
-				break
+
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				event, err := tick.Recv()
+				// if err is io.EOF break Loop
+				if errors.Is(err, io.EOF) {
+					break Loop
+				}
+				if err != nil {
+					log.Printf("\nerror while receive event from timerservice, %s", err)
+					cancel()
+					break Loop
+				}
+				// make list of uuid to send it to chan
+				uuids := make([]uuid.UUID, 0, len(event.GetIds()))
+				for _, b := range event.GetIds() {
+					uuids = append(uuids, uuid.UUID(b))
+				}
+				uuidChan <- uuids
 			}
-			if err != nil {
-				log.Fatal("error while receive event from timerservice", err)
-				cancel()
-				break
-			}
-			// make list of uuid to send it to chan
-			uuids := make([]uuid.UUID, 0, len(event.GetIds()))
-			for _, b := range event.GetIds() {
-				uuids = append(uuids, uuid.UUID(b))
-			}
-			uuidChan <- uuids
 		}
 		close(uuidChan)
 	}()

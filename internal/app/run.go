@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"sync"
 	"time"
 
 	"github.com/Tap-Team/timerapi/internal/config"
@@ -24,6 +26,8 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
+	"github.com/Tap-Team/timerapi/internal/transport/grpcserver"
+	"github.com/Tap-Team/timerapi/internal/transport/grpcserver/notificationservice"
 	"github.com/Tap-Team/timerapi/internal/transport/rest/notificationhandler"
 	"github.com/Tap-Team/timerapi/internal/transport/rest/timerhandler"
 	"github.com/Tap-Team/timerapi/internal/transport/ws/timersocket"
@@ -37,6 +41,8 @@ import (
 )
 
 func Run() {
+	os.Setenv("TZ", "UTC")
+
 	config := config.FromFile("config/config.yaml")
 	ctx := context.Background()
 
@@ -65,9 +71,7 @@ func Run() {
 		subscriberStorage,
 		notificationStorage,
 	)
-	go func() {
-		notificationStream.Start(ctx)
-	}()
+	go notificationStream.Start(ctx)
 
 	eventSender := timereventstream.New()
 
@@ -100,22 +104,43 @@ func Run() {
 	notificationhandler.Init(g, notificationUseCase)
 	timersocket.Init(g, eventSender, notificationStream)
 
-	addr := config.Server.Address()
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		addr := config.Server.Address()
 
-	h2s := &http2.Server{
-		IdleTimeout: 10 * time.Second,
-	}
-	s := http.Server{
-		Addr:    addr,
-		Handler: h2c.NewHandler(e, h2s),
-	}
-	err = s.ListenAndServe()
-	log.Fatal(err)
+		h2s := &http2.Server{
+			IdleTimeout: 10 * time.Second,
+		}
+		s := http.Server{
+			Addr:    addr,
+			Handler: h2c.NewHandler(e, h2s),
+		}
+		log.Printf("ECHO APP STARTED ON %s", addr)
+		err := s.ListenAndServe()
+		log.Fatalf("api server failed start failed, %s", err)
+		wg.Done()
+	}()
+
+	go func() {
+		notificationService := notificationservice.New(notificationStream)
+
+		addr := config.NotificationServer.Address()
+		server := grpcserver.New(
+			&grpcserver.Services{
+				NotificationService: notificationService,
+			},
+		)
+		err := server.ListenAndServe(addr)
+		log.Fatalf("notification server start failed, %s", err)
+		wg.Done()
+	}()
+	wg.Wait()
 }
 
 func middleWare(e *echo.Echo, config *config.Config) *echo.Group {
 	e.HTTPErrorHandler = echoconfig.ErrorHandler
-	swagger.New(e)
+	swagger.New(e, config.Swagger)
 
 	e.Use(middleware.CORS())
 	e.Use(middleware.Logger())

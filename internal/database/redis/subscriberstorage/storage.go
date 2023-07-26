@@ -23,7 +23,7 @@ func New(rc *redis.Client) *Storage {
 
 func Error(err error, cause exception.Cause) error {
 	if errors.Is(err, redis.Nil) {
-		return exception.Wrap(timererror.ExceptionTimerSubscribersNotFound, cause)
+		return exception.Wrap(timererror.ExceptionTimerSubscribersNotFound(), cause)
 	}
 	return exception.Wrap(err, cause)
 }
@@ -52,7 +52,7 @@ func (s *Storage) Subscribe(ctx context.Context, timerId uuid.UUID, userIds ...i
 	// copy user id to subscribers map
 	for _, userId := range userIds {
 		if _, ok := subscribers[userId]; ok {
-			return Error(timererror.ExceptionUserAlreadySubscriber, exception.NewCause("add user in subscribers group", "Subscribe", _PROVIDER))
+			return Error(timererror.ExceptionUserAlreadySubscriber(), exception.NewCause("add user in subscribers group", "Subscribe", _PROVIDER))
 		}
 		subscribers[userId] = struct{}{}
 	}

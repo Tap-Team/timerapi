@@ -122,7 +122,7 @@ func (s *Storage) DeleteTimer(ctx context.Context, id uuid.UUID) error {
 		return Error(err, exception.NewCause("delete timer query", "DeleteTimer", _PROVIDER))
 	}
 	if cmd.RowsAffected() == 0 {
-		return timererror.ExceptionTimerNotFound
+		return timererror.ExceptionTimerNotFound()
 	}
 	return nil
 }

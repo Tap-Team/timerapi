@@ -65,7 +65,7 @@ func TestSubscribeUnsubscribe(t *testing.T) {
 	}
 	// make sure timer was deleted
 	_, err = testSubscriberStorage.TimerSubscribers(ctx, timerId)
-	if !errors.Is(err, timererror.ExceptionTimerSubscribersNotFound) {
+	if !errors.Is(err, timererror.ExceptionTimerSubscribersNotFound()) {
 		t.Fatal("unsubscribe test failed, key record not deleted")
 	}
 }
@@ -106,7 +106,7 @@ func TestSubscribeAll(t *testing.T) {
 	}
 	// if timer not deleted fatal with error
 	_, err = testSubscriberStorage.TimerSubscribers(ctx, timerId)
-	if !errors.Is(err, timererror.ExceptionTimerSubscribersNotFound) {
+	if !errors.Is(err, timererror.ExceptionTimerSubscribersNotFound()) {
 		t.Fatal("delete test failed, key record not deleted")
 	}
 }

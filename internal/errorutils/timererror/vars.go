@@ -9,23 +9,34 @@ import (
 const timerErrType = "timer"
 
 var (
-	ExceptionTimerNotFound            = exception.New(http.StatusNotFound, timerErrType, "not_found")
-	ExceptionTimerExists              = exception.New(http.StatusBadRequest, timerErrType, "exists")
-	ExceptionCountDownTimerNotFound   = exception.New(http.StatusNotFound, timerErrType, "countdown_not_found")
-	ExceptionTimerSubscribersNotFound = exception.New(http.StatusNotFound, timerErrType, "subscribers_not_found")
-	ExceptionWrongTimerTime           = exception.New(http.StatusBadRequest, timerErrType, "wrong_time")
-	ExceptionNilID                    = exception.New(http.StatusBadRequest, timerErrType, "nil_id")
+	ExceptionTimerNotFound          = func() exception.Exception { return exception.New(http.StatusNotFound, timerErrType, "not_found") }
+	ExceptionTimerExists            = func() exception.Exception { return exception.New(http.StatusBadRequest, timerErrType, "exists") }
+	ExceptionCountDownTimerNotFound = func() exception.Exception {
+		return exception.New(http.StatusNotFound, timerErrType, "countdown_not_found")
+	}
+	ExceptionTimerSubscribersNotFound = func() exception.Exception {
+		return exception.New(http.StatusNotFound, timerErrType, "subscribers_not_found")
+	}
+	ExceptionWrongTimerTime = func() exception.Exception { return exception.New(http.StatusBadRequest, timerErrType, "wrong_time") }
+	ExceptionNilID          = func() exception.Exception { return exception.New(http.StatusBadRequest, timerErrType, "nil_id") }
 
-	ExceptionUserForbidden = exception.New(http.StatusForbidden, timerErrType, "user_forbidden")
+	ExceptionUserForbidden = func() exception.Exception { return exception.New(http.StatusForbidden, timerErrType, "user_forbidden") }
 
-	ExceptionColorNotFound  = exception.New(http.StatusNotFound, timerErrType, "color_not_found")
-	ExceptionTypeNotFound   = exception.New(http.StatusNotFound, timerErrType, "type_not_found")
-	ExceptionStatusNotFound = exception.New(http.StatusNotFound, timerErrType, "status_not_found")
+	ExceptionColorNotFound = func() exception.Exception { return exception.New(http.StatusNotFound, timerErrType, "color_not_found") }
+	ExceptionTypeNotFound  = func() exception.Exception { return exception.New(http.StatusNotFound, timerErrType, "type_not_found") }
 
-	ExceptionTimerIsPaused  = exception.New(http.StatusBadRequest, timerErrType, "is_paused")
-	ExceptionTimerIsPlaying = exception.New(http.StatusBadRequest, timerErrType, "is_playing")
+	ExceptionStatusNotFound = func() exception.Exception {
+		return exception.New(http.StatusNotFound, timerErrType, "status_not_found")
+	}
 
-	ExceptionUserAlreadySubscriber = exception.New(http.StatusBadRequest, timerErrType, "user_already_subscriber")
+	ExceptionTimerIsPaused  = func() exception.Exception { return exception.New(http.StatusBadRequest, timerErrType, "is_paused") }
+	ExceptionTimerIsPlaying = func() exception.Exception { return exception.New(http.StatusBadRequest, timerErrType, "is_playing") }
 
-	ExceptionCreatorUnsubscribe = exception.New(http.StatusBadRequest, timerErrType, "creator_unsubscribe")
+	ExceptionUserAlreadySubscriber = func() exception.Exception {
+		return exception.New(http.StatusBadRequest, timerErrType, "user_already_subscriber")
+	}
+
+	ExceptionCreatorUnsubscribe = func() exception.Exception {
+		return exception.New(http.StatusBadRequest, timerErrType, "creator_unsubscribe")
+	}
 )

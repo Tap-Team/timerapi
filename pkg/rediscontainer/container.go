@@ -2,6 +2,7 @@ package rediscontainer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/testcontainers/testcontainers-go"
@@ -26,5 +27,16 @@ func New(ctx context.Context) (*redis.Client, func(context.Context) error, error
 		return nil, nil, err
 	}
 	rc := redis.NewClient(opts)
-	return rc, rcnt.Terminate, nil
+	term := func(ctx context.Context) error {
+		err := rc.Close()
+		if err != nil {
+			return fmt.Errorf("failed to close redis connection, %s", err)
+		}
+		err = rcnt.Terminate(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to terminate redis container, %s", err)
+		}
+		return nil
+	}
+	return rc, term, nil
 }

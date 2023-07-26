@@ -13,7 +13,6 @@ import (
 	"github.com/Tap-Team/timerapi/pkg/exception"
 	"github.com/Tap-Team/timerapi/pkg/saga"
 	"github.com/google/uuid"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -98,53 +97,44 @@ func (uc *UseCase) Create(ctx context.Context, creator int64, timer *timermodel.
 	var err error
 	var saga saga.Saga
 	defer saga.Rollback()
-	errgr, grctx := errgroup.WithContext(ctx)
 
 	// create timer into storage
-	errgr.Go(func() error {
-		switch timer.Type {
-		case timerfields.DATE:
-			err := uc.timerStorage.InsertDateTimer(grctx, creator, timer)
-			if err != nil {
-				return exception.Wrap(err, exception.NewCause("create date timer into storage", "Create", _PROVIDER))
-			}
-		case timerfields.COUNTDOWN:
-			err := uc.timerStorage.InsertCountdownTimer(grctx, creator, timer)
-			if err != nil {
-				return exception.Wrap(err, exception.NewCause("create countdown timer into storage", "Create", _PROVIDER))
-			}
+	switch timer.Type {
+	case timerfields.DATE:
+		err := uc.timerStorage.InsertDateTimer(ctx, creator, timer)
+		if err != nil {
+			return exception.Wrap(err, exception.NewCause("create date timer into storage", "Create", _PROVIDER))
 		}
-		saga.Register(func() { uc.timerStorage.DeleteTimer(ctx, timer.ID) })
-		return nil
+	case timerfields.COUNTDOWN:
+		err := uc.timerStorage.InsertCountdownTimer(ctx, creator, timer)
+		if err != nil {
+			return exception.Wrap(err, exception.NewCause("create countdown timer into storage", "Create", _PROVIDER))
+		}
+	}
+	saga.Register(func() {
+		uc.timerStorage.DeleteTimer(ctx, timer.ID)
 	})
 
 	// subscribe creator to own timer in subscriberStorage
-	errgr.Go(func() error {
-		err := uc.subscriberStorage.Subscribe(grctx, timer.ID, creator)
-		if err != nil {
-			return exception.Wrap(err, exception.NewCause("subscribe creator to own timer", "Create", _PROVIDER))
-		}
-		saga.Register(func() { uc.subscriberStorage.DeleteTimer(ctx, timer.ID) })
-		return nil
+	err = uc.subscriberStorage.Subscribe(ctx, timer.ID, creator)
+	if err != nil {
+		return exception.Wrap(err, exception.NewCause("subscribe creator to own timer", "Create", _PROVIDER))
+	}
+	saga.Register(func() {
+		uc.subscriberStorage.DeleteTimer(ctx, timer.ID)
 	})
 	// add timer end time in timer service
-	errgr.Go(func() error {
-		err := uc.timerService.Add(grctx, timer.ID, timer.EndTime.Unix())
-		if s, ok := status.FromError(err); ok && s.Code() == codes.AlreadyExists {
-			return exception.Wrap(timererror.ExceptionTimerExists, exception.NewCause("add timer end time to timerService", "Create", _PROVIDER))
-		}
-		if err != nil {
-			return exception.Wrap(err, exception.NewCause("add timer end time to timerService", "Create", _PROVIDER))
-		}
-		saga.Register(func() { uc.timerService.Remove(ctx, timer.ID) })
-		return nil
+	err = uc.timerService.Add(ctx, timer.ID, timer.EndTime.Unix())
+	if s, ok := status.FromError(err); ok && s.Code() == codes.AlreadyExists {
+		return exception.Wrap(timererror.ExceptionTimerExists(), exception.NewCause("add timer end time to timerService", "Create", _PROVIDER))
+	}
+	if err != nil {
+		return exception.Wrap(err, exception.NewCause("add timer end time to timerService", "Create", _PROVIDER))
+	}
+	saga.Register(func() {
+		uc.timerService.Remove(ctx, timer.ID)
 	})
 
-	// wait err
-	err = errgr.Wait()
-	if err != nil {
-		return err
-	}
 	// if err == nil set saga state is ok
 	saga.OK()
 	return nil
@@ -212,7 +202,7 @@ func (uc *UseCase) checkAccess(ctx context.Context, userId int64, timerId uuid.U
 		return nil, exception.Wrap(err, exception.NewCause("get timer by id", "checkAccess", _PROVIDER))
 	}
 	if timer.Creator != userId {
-		return nil, exception.Wrap(timererror.ExceptionUserForbidden, exception.NewCause("compare creator and userId", "checkAccess", _PROVIDER))
+		return nil, exception.Wrap(timererror.ExceptionUserForbidden(), exception.NewCause("compare creator and userId", "checkAccess", _PROVIDER))
 	}
 	return timer, nil
 }
@@ -227,47 +217,35 @@ func (uc *UseCase) Subscribe(ctx context.Context, timerId uuid.UUID, userId int6
 		return nil, exception.Wrap(err, exception.NewCause("get timer by id", "Unsubscribe", _PROVIDER))
 	}
 	if timer.Creator == userId {
-		return nil, exception.Wrap(timererror.ExceptionUserAlreadySubscriber, exception.NewCause("unsubscribe timer", "Unsubscribe", _PROVIDER))
+		return nil, exception.Wrap(timererror.ExceptionUserAlreadySubscriber(), exception.NewCause("unsubscribe timer", "Unsubscribe", _PROVIDER))
 	}
 	// create new saga
 	var saga saga.Saga
 	// defer saga was rollback if not all ok
 	defer saga.Rollback()
-	errgr, grctx := errgroup.WithContext(ctx)
 
 	// subscribe in subscriber cache storage
-	errgr.Go(func() error {
-		err := uc.subscriberStorage.Subscribe(grctx, timerId, userId)
-		if err != nil {
-			return exception.Wrap(err, exception.NewCause("subscribe in cache storage", "Subscribe", _PROVIDER))
-		}
-		// register rollback
-		saga.Register(func() { uc.subscriberStorage.Unsubscribe(ctx, timerId, userId) })
-		return nil
-	})
+	err = uc.subscriberStorage.Subscribe(ctx, timerId, userId)
+	if err != nil {
+		return nil, exception.Wrap(err, exception.NewCause("subscribe in cache storage", "Subscribe", _PROVIDER))
+	}
+	// register rollback
+	saga.Register(func() { uc.subscriberStorage.Unsubscribe(ctx, timerId, userId) })
 
 	// subscribe in timerStorage
-	errgr.Go(func() error {
-		err := uc.timerStorage.Subscribe(grctx, timerId, userId)
-		if err != nil {
-			return exception.Wrap(err, exception.NewCause("subscribe in timer storage", "Subscribe", _PROVIDER))
-		}
-		// register rollback
-		saga.Register(func() { uc.subscriberStorage.Unsubscribe(ctx, timerId, userId) })
-		return nil
-	})
-
-	err = errgr.Wait()
+	err = uc.timerStorage.Subscribe(ctx, timerId, userId)
 	if err != nil {
-		return nil, err
+		return nil, exception.Wrap(err, exception.NewCause("subscribe in timer storage", "Subscribe", _PROVIDER))
 	}
+	// register rollback
+	saga.Register(func() { uc.subscriberStorage.Unsubscribe(ctx, timerId, userId) })
+
 	saga.OK()
 	return timer, nil
 }
 
 func (uc *UseCase) Unsubscribe(ctx context.Context, timerId uuid.UUID, userId int64) error {
 	var err error
-
 	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
 	defer cancel()
 	timer, err := uc.timerStorage.Timer(ctx, timerId)
@@ -275,40 +253,28 @@ func (uc *UseCase) Unsubscribe(ctx context.Context, timerId uuid.UUID, userId in
 		return exception.Wrap(err, exception.NewCause("get timer from storage", "Unsubscribe", _PROVIDER))
 	}
 	if timer.Creator == userId {
-		return exception.Wrap(timererror.ExceptionCreatorUnsubscribe, exception.NewCause("unsubscribe timer", "Unsubscribe", _PROVIDER))
+		return exception.Wrap(timererror.ExceptionCreatorUnsubscribe(), exception.NewCause("unsubscribe timer", "Unsubscribe", _PROVIDER))
 	}
 	// create new saga
 	var saga saga.Saga
 	// defer saga was rollback if not all ok
 	defer saga.Rollback()
-	errgr, grctx := errgroup.WithContext(ctx)
 
 	// unsubscribe in subscriber cache storage
-	errgr.Go(func() error {
-		err := uc.subscriberStorage.Unsubscribe(grctx, timerId, userId)
-		if err != nil {
-			return exception.Wrap(err, exception.NewCause("unsubscribe in cache storage", "Unsubscribe", _PROVIDER))
-		}
-		// register rollback
-		saga.Register(func() { uc.subscriberStorage.Subscribe(ctx, timerId, userId) })
-		return nil
-	})
+	err = uc.subscriberStorage.Unsubscribe(ctx, timerId, userId)
+	if err != nil {
+		return exception.Wrap(err, exception.NewCause("unsubscribe in cache storage", "Unsubscribe", _PROVIDER))
+	}
+	// register rollback
+	saga.Register(func() { uc.subscriberStorage.Subscribe(ctx, timerId, userId) })
 
 	// unsubscribe in timer storage
-	errgr.Go(func() error {
-		err := uc.timerStorage.Unsubscribe(grctx, timerId, userId)
-		if err != nil {
-			return exception.Wrap(err, exception.NewCause("unsubscribe in timer storage", "Unsubscribe", _PROVIDER))
-		}
-		// register rollback
-		saga.Register(func() { uc.subscriberStorage.Subscribe(ctx, timerId, userId) })
-		return nil
-	})
-
-	err = errgr.Wait()
+	err = uc.timerStorage.Unsubscribe(ctx, timerId, userId)
 	if err != nil {
-		return err
+		return exception.Wrap(err, exception.NewCause("unsubscribe in timer storage", "Unsubscribe", _PROVIDER))
 	}
+	// register rollback
+	saga.Register(func() { uc.subscriberStorage.Subscribe(ctx, timerId, userId) })
 
 	saga.OK()
 	return nil

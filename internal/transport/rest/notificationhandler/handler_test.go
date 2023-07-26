@@ -211,13 +211,12 @@ func deleteNotification(t *testing.T, ctx context.Context, userIds []int64) {
 	wg.Add(len(userIds))
 	// for every user
 	for _, userId := range userIds {
-		userId := userId
 		timers := randomTimerList(tam)
 		userTimers = append(userTimers, &UserWithTimers{
 			UserId: userId,
 			Timers: timers,
 		})
-		go func() {
+		go func(userId int64) {
 			defer wg.Done()
 			// for create notification we need create timer and delete
 			// for receive subscribe we need subsccribe on timer
@@ -229,7 +228,7 @@ func deleteNotification(t *testing.T, ctx context.Context, userIds []int64) {
 				_, err = deleteTimer(ctx, timer.Creator, timer.ID)
 				require.NoError(t, err, "delete timer failed")
 			}
-		}()
+		}(userId)
 	}
 	wg.Wait()
 

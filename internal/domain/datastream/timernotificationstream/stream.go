@@ -5,38 +5,34 @@ import (
 	"github.com/google/uuid"
 )
 
-type Stream struct {
+type ServiceStream struct {
+	// pointer to handler
 	handler *StreamHandler
-	id      uuid.UUID
-	userId  int64
-	ch      chan notification.Notification
+	// unique stream id
+	id uuid.UUID
+	// chan to stream notification
+	ch chan notification.NotificationSubscribers
 }
 
-func (sh *StreamHandler) NewStream(userId int64) interface {
-	Stream() <-chan notification.Notification
+func (h *StreamHandler) NewStream() interface {
+	Stream() <-chan notification.NotificationSubscribers
 	Close()
 } {
 	id := uuid.New()
-	stream := &Stream{handler: sh, id: id, userId: userId, ch: make(chan notification.Notification, 10)}
-	sh.mu.Lock()
-	if _, ok := sh.subscribers[userId]; !ok {
-		sh.subscribers[userId] = make(map[uuid.UUID]*Stream)
-	}
-	sh.subscribers[userId][id] = stream
-	sh.mu.Unlock()
+	stream := &ServiceStream{handler: h, id: id, ch: make(chan notification.NotificationSubscribers, 100)}
+
+	h.mu.Lock()
+	h.serviceStreams[id] = stream
+	h.mu.Unlock()
 	return stream
 }
 
-func (s *Stream) Close() {
+func (s *ServiceStream) Close() {
 	s.handler.mu.Lock()
-	delete(s.handler.subscribers[s.userId], s.id)
-	if len(s.handler.subscribers[s.userId]) == 0 {
-		delete(s.handler.subscribers, s.userId)
-	}
-	close(s.ch)
+	delete(s.handler.serviceStreams, s.id)
 	s.handler.mu.Unlock()
 }
 
-func (s *Stream) Stream() <-chan notification.Notification {
+func (s *ServiceStream) Stream() <-chan notification.NotificationSubscribers {
 	return s.ch
 }

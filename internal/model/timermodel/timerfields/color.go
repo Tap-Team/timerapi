@@ -19,5 +19,5 @@ func (c Color) Validate() error {
 			return nil
 		}
 	}
-	return timererror.ExceptionColorNotFound
+	return timererror.ExceptionColorNotFound()
 }

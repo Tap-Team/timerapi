@@ -64,7 +64,7 @@ func (s *Storage) UpdatePauseTime(ctx context.Context, timerId uuid.UUID, pauseT
 		return Error(err, exception.NewCause("update timer pause time failed", "UpdatePauseTime", _PROVIDER))
 	}
 	if cmd.RowsAffected() == 0 {
-		return Error(timererror.ExceptionCountDownTimerNotFound, exception.NewCause("update timer rows = 0", "UpdatePauseTime", _PROVIDER))
+		return Error(timererror.ExceptionCountDownTimerNotFound(), exception.NewCause("update timer rows = 0", "UpdatePauseTime", _PROVIDER))
 	}
 	return nil
 }

@@ -53,10 +53,10 @@ func (t *CreateTimer) Validate() error {
 		return err
 	}
 	if t.StartTime.T().After(t.EndTime.T()) {
-		return timererror.ExceptionWrongTimerTime
+		return timererror.ExceptionWrongTimerTime()
 	}
 	if t.ID == uuid.Nil {
-		return timererror.ExceptionNilID
+		return timererror.ExceptionNilID()
 	}
 	return nil
 }

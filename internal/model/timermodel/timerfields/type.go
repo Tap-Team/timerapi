@@ -5,8 +5,8 @@ import "github.com/Tap-Team/timerapi/internal/errorutils/timererror"
 type Type string
 
 const (
-	COUNTDOWN = "COUNTDOWN"
-	DATE      = "DATE"
+	COUNTDOWN Type = "COUNTDOWN"
+	DATE      Type = "DATE"
 )
 
 func (t Type) Validate() error {
@@ -15,5 +15,5 @@ func (t Type) Validate() error {
 			return nil
 		}
 	}
-	return timererror.ExceptionTypeNotFound
+	return timererror.ExceptionTypeNotFound()
 }

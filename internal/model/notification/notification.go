@@ -18,6 +18,11 @@ type Notification interface {
 	Timer() timermodel.Timer
 }
 
+type NotificationSubscribers interface {
+	Notification
+	Subscribers() []int64
+}
+
 type NotificationDTO struct {
 	Ntype  NotificationType `json:"type"`
 	NTimer timermodel.Timer `json:"timer"`
@@ -41,4 +46,23 @@ func NewExpired(timer timermodel.Timer) Notification {
 
 func NewDelete(timer timermodel.Timer) Notification {
 	return &NotificationDTO{NTimer: timer, Ntype: Delete}
+}
+
+type NotificationDTOSubscribers struct {
+	NotificationDTO
+	Subs []int64 `json:"subscribers"`
+}
+
+func (ns *NotificationDTOSubscribers) Subscribers() []int64 {
+	return ns.Subs
+}
+
+func NewWithSubscribers(notification Notification, subscribers []int64) NotificationSubscribers {
+	return &NotificationDTOSubscribers{
+		NotificationDTO: NotificationDTO{
+			Ntype:  notification.Type(),
+			NTimer: notification.Timer(),
+		},
+		Subs: subscribers,
+	}
 }

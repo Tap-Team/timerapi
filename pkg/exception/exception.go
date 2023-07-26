@@ -124,15 +124,12 @@ func (e *AmidException) Unwrap() error {
 func Wrap(err error, uerr error) Exception {
 	switch err := err.(type) {
 	case *AmidException:
-		exception := *err
-		exception.causes = make([]Cause, len(err.causes))
-		copy(exception.causes, err.causes)
 		if cause, ok := uerr.(Cause); ok {
-			exception.causes = append(exception.causes, cause)
+			err.causes = append(err.causes, cause)
 		} else {
-			exception.err = uerr
+			err.err = uerr
 		}
-		return &exception
+		return err
 	default:
 		return Wrap(NewInternal(err), uerr)
 	}

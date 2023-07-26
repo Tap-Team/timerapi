@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/Tap-Team/timerapi/proto/notificationservicepb";
+
+package notificationservicepb;
+
+message Timer {
+    string name = 2;
+    string description = 3;
+    string type = 4;
+}
+
+message Notification {
+    string type = 1;
+    Timer timer = 2;
+    repeated int64 subscribers = 3;
+}
+
+message RepeatedNotification {
+    repeated Notification notifications = 1;
+}
+
+message Ids {
+    repeated bytes ids = 1;
+}
+
+service NotificationService {
+    rpc NotificationStream(google.protobuf.Empty) returns (stream Notification) {}
+    rpc Notifications(Ids) returns (RepeatedNotification)  {}
+}

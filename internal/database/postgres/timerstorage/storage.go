@@ -28,19 +28,19 @@ func Error(err error, cause exception.Cause) error {
 	if errors.As(err, &pgerr) {
 		switch pgerr.ConstraintName {
 		case countdowntimersql.FK_Timers:
-			return exception.Wrap(timererror.ExceptionTimerNotFound, cause)
+			return exception.Wrap(timererror.ExceptionTimerNotFound(), cause)
 		case subscribersql.FK_Timers:
-			return exception.Wrap(timererror.ExceptionTimerNotFound, cause)
+			return exception.Wrap(timererror.ExceptionTimerNotFound(), cause)
 		case subscribersql.PrimaryKey:
-			return exception.Wrap(timererror.ExceptionUserAlreadySubscriber, cause)
+			return exception.Wrap(timererror.ExceptionUserAlreadySubscriber(), cause)
 		case timersql.PrimaryKey:
-			return exception.Wrap(timererror.ExceptionTimerExists, cause)
+			return exception.Wrap(timererror.ExceptionTimerExists(), cause)
 		}
 	}
 
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
-		return exception.Wrap(timererror.ExceptionTimerNotFound, cause)
+		return exception.Wrap(timererror.ExceptionTimerNotFound(), cause)
 	default:
 		return exception.Wrap(err, cause)
 	}

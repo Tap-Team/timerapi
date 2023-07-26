@@ -88,15 +88,15 @@ func stop(t *testing.T, ctx context.Context, timer *timermodel.Timer, pauseTime 
 
 	// try stop timer from random user
 	_, err = stopTimer(ctx, timer.ID, rand.Int63(), pauseTime.Unix())
-	require.ErrorIs(t, err, timererror.ExceptionUserForbidden, "stop timer check access failed")
+	require.ErrorIs(t, err, timererror.ExceptionUserForbidden(), "stop timer check access failed")
 
 	// try stop no exists timer
 	_, err = stopTimer(ctx, uuid.New(), timer.Creator, pauseTime.Unix())
-	require.ErrorIs(t, err, timererror.ExceptionTimerNotFound, "stop timer storage found no exists timer")
+	require.ErrorIs(t, err, timererror.ExceptionTimerNotFound(), "stop timer storage found no exists timer")
 
 	// try stop timer which already stopped
 	_, err = stopTimer(ctx, timer.ID, timer.Creator, pauseTime.Unix())
-	require.ErrorIs(t, err, timererror.ExceptionTimerIsPaused, "stop timer which already stopped")
+	require.ErrorIs(t, err, timererror.ExceptionTimerIsPaused(), "stop timer which already stopped")
 
 	tm, err := timerStorage.Timer(ctx, timer.ID)
 	require.NoError(t, err, "get timer from storage failed")
@@ -113,19 +113,20 @@ func start(t *testing.T, ctx context.Context, timer *timermodel.Timer) *timermod
 	require.Equal(t, http.StatusOK, rec.Result().StatusCode, "start timer wrong status code of pause time")
 
 	tm := timerFromBody(t, rec)
-	require.True(t, int64(timeInPause) >= tm.EndTime.Unix()-timer.EndTime.Unix(), "stop timer not update end time")
+	difference := tm.EndTime.Unix() - timer.EndTime.Unix()
+	require.True(t, difference >= int64(timeInPause), "stop timer not update end time")
 
 	// start timer with random user id
 	_, err = startTimer(ctx, timer.ID, rand.Int63())
-	require.ErrorIs(t, err, timererror.ExceptionUserForbidden, "stop timer check access failed")
+	require.ErrorIs(t, err, timererror.ExceptionUserForbidden(), "stop timer check access failed")
 
 	// start timer with non exists timer id
 	_, err = startTimer(ctx, uuid.New(), timer.Creator)
-	require.ErrorIs(t, err, timererror.ExceptionTimerNotFound, "storage found no exists timer")
+	require.ErrorIs(t, err, timererror.ExceptionTimerNotFound(), "storage found no exists timer")
 
 	// start already started timer
 	_, err = startTimer(ctx, timer.ID, timer.Creator)
-	require.ErrorIs(t, err, timererror.ExceptionTimerIsPlaying, "start timer which already playing")
+	require.ErrorIs(t, err, timererror.ExceptionTimerIsPlaying(), "start timer which already playing")
 
 	// compare timer from storage
 	timer, err = timerStorage.Timer(ctx, timer.ID)

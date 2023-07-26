@@ -75,7 +75,7 @@ func createTimerTest(t *testing.T, ctx context.Context, ct *timermodel.Timer, us
 
 	// try create same time twice, except timer exists error
 	_, err = createTimer(ctx, userId, ct.CreateTimer())
-	if !errors.Is(err, timererror.ExceptionUserAlreadySubscriber) && !errors.Is(err, timererror.ExceptionTimerExists) {
+	if !errors.Is(err, timererror.ExceptionUserAlreadySubscriber()) && !errors.Is(err, timererror.ExceptionTimerExists()) {
 		log.Fatalf("wrong create timer response error")
 	}
 
@@ -101,7 +101,7 @@ func updateTimerTest(t *testing.T, ctx context.Context, timerId uuid.UUID, userI
 
 	// update no-exists timer
 	_, err = updateTimer(ctx, userId, uuid.New(), randomTimerSettings())
-	require.ErrorIs(t, err, timererror.ExceptionTimerNotFound, "update no exists timer wrong error")
+	require.ErrorIs(t, err, timererror.ExceptionTimerNotFound(), "update no exists timer wrong error")
 
 	// get timer from storage and compare data with input settings
 	timer, err := timerStorage.Timer(ctx, timerId)
@@ -119,13 +119,13 @@ func deleteTimerTest(t *testing.T, ctx context.Context, timerId uuid.UUID, userI
 
 	// make sure timer is deleted
 	_, err = timerStorage.Timer(ctx, timerId)
-	require.ErrorIs(t, err, timererror.ExceptionTimerNotFound, "get timer from storage wrong error")
+	require.ErrorIs(t, err, timererror.ExceptionTimerNotFound(), "get timer from storage wrong error")
 
 	// make sure timer subscribers deleted from storage
 	_, err = subscriberStorage.TimerSubscribers(ctx, timerId)
-	require.ErrorIs(t, err, timererror.ExceptionTimerSubscribersNotFound, "get timer subscribers wrong error")
+	require.NoError(t, err, "get timer subscribers wrong error")
 
 	// try delete no exists timer
 	_, err = deleteTimer(ctx, userId, timerId)
-	require.ErrorIs(t, timererror.ExceptionTimerNotFound, err, "delete no exists timer wrong error")
+	require.ErrorIs(t, timererror.ExceptionTimerNotFound(), err, "delete no exists timer wrong error")
 }

@@ -10,7 +10,7 @@
         },
         "version": "1.0"
     },
-    "host": "localhost:12700",
+    "host": "31.129.99.174:12700",
     "basePath": "/",
     "paths": {
         "/notifications": {
@@ -657,76 +657,6 @@
                 }
             }
         },
-        "/timers/user": {
-            "get": {
-                "description": "get all user timers with offset and limit, timers include created by user and user subscriptions",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "timers"
-                ],
-                "summary": "TimersByUser",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "you can add secret key to query for debug requests",
-                        "name": "debug",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "user id",
-                        "name": "vk_user_id",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "offset",
-                        "name": "offset",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "limit",
-                        "name": "limit",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/timermodel.Timer"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/echoconfig.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/echoconfig.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/echoconfig.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/timers/user-created": {
             "get": {
                 "description": "get user created timers with offset and limit",
@@ -866,6 +796,73 @@
                     }
                 }
             }
+        },
+        "/ws/timer": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ws"
+                ],
+                "summary": "Websocket",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    },
+                    {
+                        "description": "event to add\\remove timers from event stream",
+                        "name": "subscribe\\unsubscribe",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/timerevent.SubscribeEvent"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "notification",
+                        "schema": {
+                            "$ref": "#/definitions/notification.NotificationDTO"
+                        }
+                    },
+                    "201": {
+                        "description": "reset event",
+                        "schema": {
+                            "$ref": "#/definitions/timerevent.ResetEvent"
+                        }
+                    },
+                    "202": {
+                        "description": "stop event",
+                        "schema": {
+                            "$ref": "#/definitions/timerevent.StopEvent"
+                        }
+                    },
+                    "203": {
+                        "description": "start event",
+                        "schema": {
+                            "$ref": "#/definitions/timerevent.StartEvent"
+                        }
+                    },
+                    "204": {
+                        "description": "update event",
+                        "schema": {
+                            "$ref": "#/definitions/timerevent.UpdateEvent"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -902,6 +899,104 @@
                 "Delete"
             ]
         },
+        "timerevent.EventType": {
+            "type": "string",
+            "enum": [
+                "event_update",
+                "event_stop",
+                "event_start",
+                "event_subscribe",
+                "event_unsubscribe",
+                "event_reset"
+            ],
+            "x-enum-varnames": [
+                "Update",
+                "Stop",
+                "Start",
+                "Subscribe",
+                "Unsubscribe",
+                "Reset"
+            ]
+        },
+        "timerevent.ResetEvent": {
+            "type": "object",
+            "properties": {
+                "endTime": {
+                    "type": "integer"
+                },
+                "timerId": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/timerevent.EventType"
+                }
+            }
+        },
+        "timerevent.StartEvent": {
+            "type": "object",
+            "properties": {
+                "endTime": {
+                    "type": "integer"
+                },
+                "timerId": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/timerevent.EventType"
+                }
+            }
+        },
+        "timerevent.StopEvent": {
+            "type": "object",
+            "properties": {
+                "pauseTime": {
+                    "type": "integer"
+                },
+                "timerId": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/timerevent.EventType"
+                }
+            }
+        },
+        "timerevent.SubscribeEvent": {
+            "type": "object",
+            "properties": {
+                "timerIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "$ref": "#/definitions/timerevent.EventType"
+                }
+            }
+        },
+        "timerevent.UpdateEvent": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "$ref": "#/definitions/timerfields.Color"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "timerId": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/timerevent.EventType"
+                },
+                "withMusic": {
+                    "type": "boolean"
+                }
+            }
+        },
         "timerfields.Color": {
             "type": "string",
             "enum": [
@@ -921,6 +1016,17 @@
                 "YELLOW"
             ]
         },
+        "timerfields.Type": {
+            "type": "string",
+            "enum": [
+                "COUNTDOWN",
+                "DATE"
+            ],
+            "x-enum-varnames": [
+                "COUNTDOWN",
+                "DATE"
+            ]
+        },
         "timermodel.CreateTimer": {
             "type": "object",
             "properties": {
@@ -931,7 +1037,7 @@
                     "type": "string"
                 },
                 "endTime": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "id": {
                     "type": "string"
@@ -940,10 +1046,10 @@
                     "type": "string"
                 },
                 "startTime": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "type": {
-                    "type": "string"
+                    "$ref": "#/definitions/timerfields.Type"
                 },
                 "utc": {
                     "type": "integer"
@@ -969,7 +1075,7 @@
                     "type": "integer"
                 },
                 "endTime": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "id": {
                     "type": "string"
@@ -981,10 +1087,10 @@
                     "type": "string"
                 },
                 "pauseTime": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "type": {
-                    "type": "string"
+                    "$ref": "#/definitions/timerfields.Type"
                 },
                 "utc": {
                     "type": "integer"

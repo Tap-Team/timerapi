@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// swagger:type int
 type DateTime time.Time
 
 func (t DateTime) T() time.Time {

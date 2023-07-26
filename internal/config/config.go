@@ -75,12 +75,36 @@ func (u TickerConfig) URL() string {
 	return u.DockerURL
 }
 
+type NotificationServerConfig struct {
+	Host string `yaml:"host"`
+	Port int64  `yaml:"port"`
+}
+
+func (c NotificationServerConfig) Address() string {
+	return fmt.Sprintf("%s:%d", c.Host, c.Port)
+}
+
+type SwaggerConfig struct {
+	ProdHost  string `yaml:"host"`
+	LocalHost string `yaml:"localhost"`
+}
+
+func (s SwaggerConfig) Host() string {
+	mode := strings.ToLower(os.Getenv("MODE"))
+	if mode == "local" || mode == "" {
+		return s.LocalHost
+	}
+	return s.ProdHost
+}
+
 type Config struct {
-	Redis    RedisConfig    `yaml:"redis"`
-	Postgres PostgresConfig `yaml:"postgres"`
-	Server   ServerConfig   `yaml:"server"`
-	VK       VkConfig       `yaml:"vk"`
-	Ticker   TickerConfig   `yaml:"ticker"`
+	Redis              RedisConfig              `yaml:"redis"`
+	Postgres           PostgresConfig           `yaml:"postgres"`
+	Server             ServerConfig             `yaml:"server"`
+	VK                 VkConfig                 `yaml:"vk"`
+	Ticker             TickerConfig             `yaml:"ticker"`
+	NotificationServer NotificationServerConfig `yaml:"notification_server"`
+	Swagger            SwaggerConfig            `yaml:"swagger"`
 }
 
 func New(
@@ -88,12 +112,14 @@ func New(
 	postgres PostgresConfig,
 	server ServerConfig,
 	ticker TickerConfig,
+	swagger SwaggerConfig,
 ) *Config {
 	return &Config{
 		Redis:    redis,
 		Postgres: postgres,
 		Server:   server,
 		Ticker:   ticker,
+		Swagger:  swagger,
 	}
 }
 

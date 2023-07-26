@@ -28,7 +28,7 @@ func (s *Storage) UpdateTime(ctx context.Context, timerId uuid.UUID, endTime ami
 		return Error(err, exception.NewCause("update timer endTime", "UpdateTime", _PROVIDER))
 	}
 	if cmd.RowsAffected() == 0 {
-		return timererror.ExceptionTimerNotFound
+		return timererror.ExceptionTimerNotFound()
 	}
 	if cmd.RowsAffected() > 1 {
 		return Error(errors.New("many than 1 rows was updated"), exception.NewCause("update timer end time", "UpdateTime", _PROVIDER))
@@ -71,7 +71,7 @@ func (s *Storage) UpdateTimer(ctx context.Context, timerId uuid.UUID, timerSetti
 		return Error(err, exception.NewCause("update timer endTime", "UpdateEndTime", _PROVIDER))
 	}
 	if cmd.RowsAffected() == 0 {
-		return Error(timererror.ExceptionTimerNotFound, exception.NewCause("update timer endTime", "UpdateEndTime", _PROVIDER))
+		return Error(timererror.ExceptionTimerNotFound(), exception.NewCause("update timer endTime", "UpdateEndTime", _PROVIDER))
 	}
 	if cmd.RowsAffected() > 1 {
 		return Error(errors.New("many than 1 rows was updated"), exception.NewCause("update timer end time", "UpdateEndTime", _PROVIDER))

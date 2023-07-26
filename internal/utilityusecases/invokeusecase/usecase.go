@@ -42,7 +42,6 @@ func New(
 }
 
 func (uc *UseCase) Invoke(ctx context.Context) error {
-	var err error
 	offset, limit := 0, 100
 	errgr, gctx := errgroup.WithContext(ctx)
 	for {
@@ -54,7 +53,7 @@ func (uc *UseCase) Invoke(ctx context.Context) error {
 			break
 		}
 		errgr.Go(func() error {
-			err = uc.subscribe(gctx, timers)
+			err := uc.subscribe(gctx, timers)
 			if err != nil {
 				return err
 			}
@@ -62,7 +61,7 @@ func (uc *UseCase) Invoke(ctx context.Context) error {
 		})
 		offset += limit
 	}
-	err = errgr.Wait()
+	err := errgr.Wait()
 	if err != nil {
 		return err
 	}
@@ -70,7 +69,6 @@ func (uc *UseCase) Invoke(ctx context.Context) error {
 }
 
 func (uc *UseCase) subscribe(ctx context.Context, timers []*timermodel.TimerSubscribers) error {
-	var err error
 	errgr, gctx := errgroup.WithContext(ctx)
 
 	timersEndTime := make(map[uuid.UUID]int64, len(timers))
@@ -79,7 +77,7 @@ func (uc *UseCase) subscribe(ctx context.Context, timers []*timermodel.TimerSubs
 	}
 	// in loop add timer ticker service timer with end time
 	errgr.Go(func() error {
-		err = uc.timersAdder.AddMany(gctx, timersEndTime)
+		err := uc.timersAdder.AddMany(gctx, timersEndTime)
 		if err != nil {
 			return exception.Wrap(err, exception.NewCause("add many timers in timersAdder", "subscribe", _PROVIDER))
 		}
@@ -88,16 +86,16 @@ func (uc *UseCase) subscribe(ctx context.Context, timers []*timermodel.TimerSubs
 
 	// in loop subscribe user on timer in cache
 	for _, timer := range timers {
-		timer := *timer
+		timer := timer
 		errgr.Go(func() error {
-			err = uc.subscriber.Subscribe(gctx, timer.ID, timer.Subscribers...)
+			err := uc.subscriber.Subscribe(gctx, timer.ID, timer.Subscribers...)
 			if err != nil {
 				return exception.Wrap(err, exception.NewCause("subscribe timer in cache storage", "subscribe", _PROVIDER))
 			}
 			return nil
 		})
 	}
-	err = errgr.Wait()
+	err := errgr.Wait()
 	if err != nil {
 		return err
 	}

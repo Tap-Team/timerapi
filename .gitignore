@@ -5,7 +5,6 @@
 /build
 .tmp
 /docker-compose.yaml
-/Dockerfile
 /Makefile
 /internal/testdata
 /testdata

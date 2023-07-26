@@ -35,8 +35,13 @@ type NotificationStorage interface {
 type StreamHandler struct {
 	mu *sync.Mutex
 	// map of user to stream
-	subscribers    map[int64]map[uuid.UUID]*Stream
-	externalStream chan notification.Notification
+	subscribers map[int64]map[uuid.UUID]*UserStream
+
+	// streams for external services
+	serviceStreams map[uuid.UUID]*ServiceStream
+
+	// stream to send notification to handler
+	ch chan notification.Notification
 
 	timerservice        timerservice.TimerServiceClient
 	timerStorage        TimerStorage
@@ -57,13 +62,14 @@ func New(
 		notificationStorage: notificationStorage,
 
 		mu:             new(sync.Mutex),
-		subscribers:    make(map[int64]map[uuid.UUID]*Stream),
-		externalStream: make(chan notification.Notification, 1024),
+		subscribers:    make(map[int64]map[uuid.UUID]*UserStream),
+		serviceStreams: make(map[uuid.UUID]*ServiceStream),
+		ch:             make(chan notification.Notification, 1024),
 	}
 }
 
 func (sh *StreamHandler) Send(notification notification.Notification) {
-	sh.externalStream <- notification
+	sh.ch <- notification
 }
 
 func (sh *StreamHandler) Start(ctx context.Context) error {
@@ -83,7 +89,7 @@ func (sh *StreamHandler) Start(ctx context.Context) error {
 			for _, timerId := range timerIds {
 				go sh.timerExpired(ctx, timerId)
 			}
-		case n, ok := <-sh.externalStream:
+		case n, ok := <-sh.ch:
 			if !ok {
 				continue
 			}
@@ -97,23 +103,40 @@ func (sh *StreamHandler) Start(ctx context.Context) error {
 
 // send notification for every subscriber
 // if subscriber offline save notification in storage
-func (sh *StreamHandler) notification(ctx context.Context, notification notification.Notification) {
-	timerSubscribers, err := sh.subscriberStorage.TimerSubscribers(ctx, notification.TimerId())
+func (sh *StreamHandler) notification(ctx context.Context, ntion notification.Notification) {
+	timerSubscribers, err := sh.subscriberStorage.TimerSubscribers(ctx, ntion.TimerId())
 	if err != nil {
 		return
 	}
-	// in range send to every stream subscriber if of expired timer
+
+	offlineSubs := make([]int64, 0)
+
+	sh.mu.Lock()
+	// in range send to every stream subscriber notification, if user offline send to external service
 	for userId := range timerSubscribers {
 		// if subscriber online send timerId to stream
 		if streamp, ok := sh.subscribers[userId]; ok {
 			for _, stream := range streamp {
-				stream.ch <- notification
+				stream.ch <- ntion
 			}
-			// if subscriber offline, save notification in storage
+			// if subscriber offline, save notification in storage and send notification to external services
 		} else {
-			sh.notificationStorage.InsertNotification(ctx, userId, notification)
+			offlineSubs = append(offlineSubs, userId)
 		}
 	}
+	// send notification with subscribers to service streams
+	if len(offlineSubs) != 0 {
+		for _, stream := range sh.serviceStreams {
+			stream.ch <- notification.NewWithSubscribers(ntion, offlineSubs)
+		}
+	}
+	sh.mu.Unlock()
+
+	// save unreaded notification in storage
+	for _, userId := range offlineSubs {
+		sh.notificationStorage.InsertNotification(ctx, userId, ntion)
+	}
+
 }
 
 func (sh *StreamHandler) timerDelete(ctx context.Context, timer timermodel.Timer) {

@@ -67,5 +67,9 @@ func NewContainer(ctx context.Context, migrationFolder string) (*Postgres, func(
 	if err != nil {
 		return nil, nil, errors.Join(err, errors.New("migrate up error"))
 	}
-	return p, container.Terminate, nil
+	term := func(ctx context.Context) error {
+		p.Close()
+		return container.Terminate(ctx)
+	}
+	return p, term, nil
 }

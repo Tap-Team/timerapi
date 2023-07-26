@@ -131,7 +131,7 @@ func notificationDelete(t *testing.T, ctx context.Context, conns []*WsConn) {
 			// check stream handler delete timer subscribers from cache
 			for _, timer := range conn.timers {
 				_, err := subscriberStorage.TimerSubscribers(ctx, timer.ID)
-				require.ErrorIs(t, err, timererror.ExceptionTimerSubscribersNotFound, "subscribers not deleted")
+				require.ErrorIs(t, err, timererror.ExceptionTimerSubscribersNotFound(), "subscribers not deleted")
 			}
 		}()
 	}
@@ -232,9 +232,9 @@ func notificationExpired(t *testing.T, ctx context.Context, conns []*WsConn) {
 					switch tm.Type {
 					// if date timer expired, it should be deleted with subscribers
 					case timerfields.DATE:
-						require.ErrorIs(t, err, timererror.ExceptionTimerNotFound, "expired timer not deleted")
+						require.ErrorIs(t, err, timererror.ExceptionTimerNotFound(), "expired timer not deleted")
 						_, err := subscriberStorage.TimerSubscribers(ctx, tm.ID)
-						require.ErrorIs(t, err, timererror.ExceptionTimerSubscribersNotFound, "expired timer subscribers not deleted")
+						require.ErrorIs(t, err, timererror.ExceptionTimerSubscribersNotFound(), "expired timer subscribers not deleted")
 					// if countdown timer expired, we only change pause time
 					case timerfields.COUNTDOWN:
 						require.Equal(t, timer.PauseTime.Unix(), timer.EndTime.Unix()-timer.Duration, "countdown timer wrong time")

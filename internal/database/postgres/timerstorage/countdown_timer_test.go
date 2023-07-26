@@ -51,11 +51,11 @@ func TestCountDownTimerCrud(t *testing.T) {
 		t.Fatalf("delete timer test failed, %s", err)
 	}
 	_, err = testTimerStorage.Timer(ctx, timer.ID)
-	if !errors.Is(err, timererror.ExceptionTimerNotFound) {
+	if !errors.Is(err, timererror.ExceptionTimerNotFound()) {
 		t.Fatalf("test timer failed, timer not deleted, %s", err)
 	}
 	_, err = testTimerStorage.TimerPause(ctx, timer.ID)
-	if !errors.Is(err, timererror.ExceptionTimerNotFound) {
+	if !errors.Is(err, timererror.ExceptionTimerNotFound()) {
 		t.Fatalf("test timer failed, timer not deleted, %s", err)
 	}
 }
