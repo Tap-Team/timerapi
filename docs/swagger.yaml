@@ -252,7 +252,7 @@ paths:
       summary: NotificationsByUser
       tags:
       - notifications
-  /timers/:id:
+  /timers/{id}:
     delete:
       description: delete user timer
       parameters:
@@ -335,7 +335,7 @@ paths:
       summary: UpdateTimer
       tags:
       - timers
-  /timers/:id/reset:
+  /timers/{id}/reset:
     patch:
       description: reset timer by timer id, only owner can reset timer, every subscriber
         (creator inclusive) will be send reset event, if timer is started, reset not
@@ -377,7 +377,7 @@ paths:
       summary: ResetTimer
       tags:
       - timers
-  /timers/:id/start:
+  /timers/{id}/start:
     patch:
       description: start timer by timer id, only owner can start timer, every subscriber
         (creator inclusive) will be send start event
@@ -418,7 +418,7 @@ paths:
       summary: StartTimer
       tags:
       - timers
-  /timers/:id/stop:
+  /timers/{id}/stop:
     patch:
       description: stop timer by timer id, only owner can stop timer, every subscriber
         (creator inclusive) will be send stop event
@@ -455,7 +455,7 @@ paths:
       summary: StopTimer
       tags:
       - timers
-  /timers/:id/subscribe:
+  /timers/{id}/subscribe:
     post:
       description: subscribe user on timer by id, user will see timer in subscriptions,
         get events and notificaitons
@@ -496,7 +496,7 @@ paths:
       summary: Subscribe
       tags:
       - timers
-  /timers/:id/subscribers:
+  /timers/{id}/subscribers:
     get:
       description: return array of id users which subscribe on timer
       parameters:
@@ -538,7 +538,7 @@ paths:
       summary: TimerSubscribers
       tags:
       - timers
-  /timers/:id/unsubscribe:
+  /timers/{id}/unsubscribe:
     delete:
       description: unsubscribe user on timer by id, user wont see timer in subscriptions,
         get events and notificaitons

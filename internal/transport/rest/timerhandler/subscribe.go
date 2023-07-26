@@ -21,7 +21,7 @@ import (
 //	@Failure		400	{object}	echoconfig.ErrorResponse
 //	@Failure		404	{object}	echoconfig.ErrorResponse
 //	@Failure		500	{object}	echoconfig.ErrorResponse
-//	@Router			/timers/:id/subscribe [post]
+//	@Router			/timers/{id}/subscribe [post]
 func (h *Handler) Subscribe(ctx context.Context) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		userId, timerId, err := userIdTimerId(c)
@@ -49,7 +49,7 @@ func (h *Handler) Subscribe(ctx context.Context) echo.HandlerFunc {
 //	@Failure		400	{object}	echoconfig.ErrorResponse
 //	@Failure		404	{object}	echoconfig.ErrorResponse
 //	@Failure		500	{object}	echoconfig.ErrorResponse
-//	@Router			/timers/:id/unsubscribe [delete]
+//	@Router			/timers/{id}/unsubscribe [delete]
 func (h *Handler) Unsubscribe(ctx context.Context) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		userId, timerId, err := userIdTimerId(c)

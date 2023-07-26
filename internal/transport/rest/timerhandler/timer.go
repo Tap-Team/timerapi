@@ -145,7 +145,7 @@ func (h *Handler) UserCreated(ctx context.Context) echo.HandlerFunc {
 //	@Failure		400	{object}	echoconfig.ErrorResponse
 //	@Failure		404	{object}	echoconfig.ErrorResponse
 //	@Failure		500	{object}	echoconfig.ErrorResponse
-//	@Router			/timers/:id/subscribers [get]
+//	@Router			/timers/{id}/subscribers [get]
 func (h *Handler) TimerSubscribers(ctx context.Context) echo.HandlerFunc {
 	f := func(c echo.Context) error {
 		timerId, err := uuid.Parse(c.Param("id"))
@@ -216,7 +216,7 @@ func (h *Handler) CreateTimer(ctx context.Context) echo.HandlerFunc {
 //	@Failure		400	{object}	echoconfig.ErrorResponse
 //	@Failure		404	{object}	echoconfig.ErrorResponse
 //	@Failure		500	{object}	echoconfig.ErrorResponse
-//	@Router			/timers/:id [delete]
+//	@Router			/timers/{id} [delete]
 func (h *Handler) DeleteTimer(ctx context.Context) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		userId, timerId, err := userIdTimerId(c)
@@ -247,7 +247,7 @@ func (h *Handler) DeleteTimer(ctx context.Context) echo.HandlerFunc {
 //	@Failure		400	{object}	echoconfig.ErrorResponse
 //	@Failure		404	{object}	echoconfig.ErrorResponse
 //	@Failure		500	{object}	echoconfig.ErrorResponse
-//	@Router			/timers/:id [put]
+//	@Router			/timers/{id} [put]
 func (h *Handler) UpdateTimer(ctx context.Context) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// parse user timer id

@@ -27,7 +27,7 @@ import (
 //	@Failure		400	{object}	echoconfig.ErrorResponse
 //	@Failure		404	{object}	echoconfig.ErrorResponse
 //	@Failure		500	{object}	echoconfig.ErrorResponse
-//	@Router			/timers/:id/stop [patch]
+//	@Router			/timers/{id}/stop [patch]
 func (h *Handler) StopTimer(ctx context.Context) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		userId, timerId, err := userIdTimerId(c)
@@ -60,7 +60,7 @@ func (h *Handler) StopTimer(ctx context.Context) echo.HandlerFunc {
 //	@Failure		400	{object}	echoconfig.ErrorResponse
 //	@Failure		404	{object}	echoconfig.ErrorResponse
 //	@Failure		500	{object}	echoconfig.ErrorResponse
-//	@Router			/timers/:id/start [patch]
+//	@Router			/timers/{id}/start [patch]
 func (h *Handler) StartTimer(ctx context.Context) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		userId, timerId, err := userIdTimerId(c)
@@ -89,7 +89,7 @@ func (h *Handler) StartTimer(ctx context.Context) echo.HandlerFunc {
 //	@Failure		400	{object}	echoconfig.ErrorResponse
 //	@Failure		404	{object}	echoconfig.ErrorResponse
 //	@Failure		500	{object}	echoconfig.ErrorResponse
-//	@Router			/timers/:id/reset [patch]
+//	@Router			/timers/{id}/reset [patch]
 func (h *Handler) ResetTimer(ctx context.Context) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		userId, timerId, err := userIdTimerId(c)
