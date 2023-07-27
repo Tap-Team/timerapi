@@ -21,42 +21,42 @@ import (
 	group.PUT("/:id", handler.UpdateTimer(ctx))
 */
 
-// // TimersByUser godoc
-// //
-// //	@Summary		TimersByUser
-// //	@Description	get all user timers with offset and limit, timers include created by user and user subscriptions
-// //	@Tags			timers
-// //	@Param			debug		query	string	false	"you can add secret key to query for debug requests"
-// //	@Param			vk_user_id	query	int64	true	"user id"
-// //	@Param			offset		query	int64	true	"offset"
-// //	@Param			limit		query	int64	true	"limit"
-// //	@Produce		json
-// //	@Success		200	{array}		timermodel.Timer
-// //	@Failure		400	{object}	echoconfig.ErrorResponse
-// //	@Failure		404	{object}	echoconfig.ErrorResponse
-// //	@Failure		500	{object}	echoconfig.ErrorResponse
-// //	@Router			/timers/user [get]
-// func (h *Handler) TimersByUser(ctx context.Context) echo.HandlerFunc {
-// 	return func(c echo.Context) error {
-// 		// parse offset and limit query
-// 		offset, limit, err := offsetLimit(c)
-// 		if err != nil {
-// 			return exception.Wrap(err, exception.NewCause("parse offset limit", "TimersByUser", _PROVIDER))
-// 		}
-// 		// parse vk_user_id
-// 		userId, err := strconv.ParseInt(c.QueryParam(vk.USER_ID), 10, 64)
-// 		if err != nil {
-// 			return exception.Wrap(err, exception.NewCause("parse userId", "TimersByUser", _PROVIDER))
-// 		}
+// TimersByUser godoc
+//
+//	@Summary		TimersByUser
+//	@Description	get all user timers with offset and limit, timers include created by user and user subscriptions
+//	@Tags			timers
+//	@Param			debug		query	string	false	"you can add secret key to query for debug requests"
+//	@Param			vk_user_id	query	int64	true	"user id"
+//	@Param			offset		query	int64	true	"offset"
+//	@Param			limit		query	int64	true	"limit"
+//	@Produce		json
+//	@Success		200	{array}		timermodel.Timer
+//	@Failure		400	{object}	echoconfig.ErrorResponse
+//	@Failure		404	{object}	echoconfig.ErrorResponse
+//	@Failure		500	{object}	echoconfig.ErrorResponse
+//	@Router			/timers/user [get]
+func (h *Handler) TimersByUser(ctx context.Context) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// parse offset and limit query
+		offset, limit, err := offsetLimit(c)
+		if err != nil {
+			return exception.Wrap(err, exception.NewCause("parse offset limit", "TimersByUser", _PROVIDER))
+		}
+		// parse vk_user_id
+		userId, err := strconv.ParseInt(c.QueryParam(vk.USER_ID), 10, 64)
+		if err != nil {
+			return exception.Wrap(err, exception.NewCause("parse userId", "TimersByUser", _PROVIDER))
+		}
 
-// 		// get timers from use case
-// 		timers, err := h.timerUseCase.UserTimers(ctx, userId, offset, limit)
-// 		if err != nil {
-// 			return exception.Wrap(err, exception.NewCause("get user timers error", "TimersByUser", _PROVIDER))
-// 		}
-// 		return c.JSON(http.StatusOK, timers)
-// 	}
-// }
+		// get timers from use case
+		timers, err := h.timerUseCase.UserTimers(ctx, userId, offset, limit)
+		if err != nil {
+			return exception.Wrap(err, exception.NewCause("get user timers error", "TimersByUser", _PROVIDER))
+		}
+		return c.JSON(http.StatusOK, timers)
+	}
+}
 
 // UserSubscriptions godoc
 //
@@ -267,5 +267,32 @@ func (h *Handler) UpdateTimer(ctx context.Context) echo.HandlerFunc {
 			return exception.Wrap(err, exception.NewCause("update timer", "UpdateTimer", _PROVIDER))
 		}
 		return c.NoContent(http.StatusNoContent)
+	}
+}
+
+// Timer godoc
+//
+//	@Summary		TimerById
+//	@Description	"returns timer by param id"
+//	@Tags			timers
+//	@Param			debug	query	string	false	"you can add secret key to query for debug requests"
+//	@Param			id		path	string	true	"timer id"
+//	@Produce		json
+//	@Success		200	{object}	timermodel.Timer
+//	@Failure		400	{object}	echoconfig.ErrorResponse
+//	@Failure		404	{object}	echoconfig.ErrorResponse
+//	@Failure		500	{object}	echoconfig.ErrorResponse
+//	@Router			/timers/{id} [get]
+func (h *Handler) Timer(ctx context.Context) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		id, err := uuid.Parse(c.Param("id"))
+		if err != nil {
+			return exception.Wrap(err, exception.NewCause("parse timer id", "Timer", _PROVIDER))
+		}
+		timer, err := h.timerUseCase.Timer(ctx, id)
+		if err != nil {
+			return exception.Wrap(err, exception.NewCause("get timer by id", "Timer", _PROVIDER))
+		}
+		return c.JSON(http.StatusOK, timer)
 	}
 }

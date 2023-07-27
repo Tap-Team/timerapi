@@ -24,6 +24,8 @@ type TimerUseCase interface {
 
 	UserSubscriptions(ctx context.Context, userId int64, offset, limit int) ([]*timermodel.Timer, error)
 	UserCreatedTimers(ctx context.Context, userId int64, offset, limit int) ([]*timermodel.Timer, error)
+	UserTimers(ctx context.Context, userId int64, offset, limit int) ([]*timermodel.Timer, error)
+	Timer(ctx context.Context, timerId uuid.UUID) (*timermodel.Timer, error)
 }
 
 type CountdownTimerUseCase interface {
@@ -50,10 +52,12 @@ func Init(e *echo.Group, timerUseCase TimerUseCase, countdownTimerUseCase Countd
 	group.GET("/user-subscriptions", handler.UserSubscriptions(ctx))
 	group.GET("/user-created", handler.UserCreated(ctx))
 	group.GET("/:id/subscribers", handler.TimerSubscribers(ctx))
+	group.GET("/user", handler.TimersByUser(ctx))
 
 	group.POST("/create", handler.CreateTimer(ctx))
 	group.DELETE("/:id", handler.DeleteTimer(ctx))
 	group.PUT("/:id", handler.UpdateTimer(ctx))
+	group.GET("/:id", handler.Timer(ctx))
 
 	group.POST("/:id/subscribe", handler.Subscribe(ctx))
 	group.POST("/:id/unsubscribe", handler.Unsubscribe(ctx))

@@ -142,27 +142,41 @@ func (uc *UseCase) Reset(ctx context.Context, timerId uuid.UUID, userId int64) (
 	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
 	defer cancel()
 	var err error
+	var pauseTime, endTime amidtime.DateTime
 
 	// check timer
 	timer, err := uc.checkCountDownTimer(ctx, timerId, userId)
 	if err != nil {
 		return nil, exception.Wrap(err, exception.NewCause("check timer", "Reset", _PROVIDER))
 	}
-
+	var saga saga.Saga
+	defer saga.Rollback()
 	// add timer duration to end time
-	endTime := amidtime.DateTime(time.Now().Add(time.Second * time.Duration(timer.Duration)))
+	oldTimerEndTime := timer.EndTime
+	endTime = amidtime.DateTime(time.Now().Add(time.Second * time.Duration(timer.Duration)))
 
 	// update time in database
 	err = uc.updater.UpdateTime(ctx, timerId, endTime)
 	if err != nil {
 		return nil, exception.Wrap(err, exception.Wrap(err, exception.NewCause("update timer time", "Reset", _PROVIDER)))
 	}
-	// send reset event
-	uc.sender.Send(timerevent.NewReset(timerId, endTime))
+	saga.Register(func() { uc.updater.UpdateTime(ctx, timerId, oldTimerEndTime) })
 
-	t := &timer.Timer
-	t.EndTime = endTime
-	return t, nil
+	if timer.IsPaused {
+		pauseTime = amidtime.DateTime(time.Unix(endTime.Unix()-timer.Duration, 0))
+		err = uc.updater.UpdatePauseTime(ctx, timer.ID, pauseTime, true)
+		if err != nil {
+			return nil, exception.Wrap(err, exception.Wrap(err, exception.NewCause("update timer pause time", "Reset", _PROVIDER)))
+		}
+	}
+	saga.OK()
+	// send reset event
+	uc.sender.Send(timerevent.NewReset(timerId, endTime, pauseTime))
+
+	timer.Timer.EndTime = endTime
+	timer.Timer.PauseTime = pauseTime
+
+	return &timer.Timer, nil
 }
 
 // check timer can be stopped or paused

@@ -70,7 +70,7 @@ func subscribe(ctx context.Context, userId int64, timerId uuid.UUID) (*httptest.
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 	c.SetParamNames("id")
-	c.SetParamValues(fmt.Sprint(timerId))
+	c.SetParamValues(timerId.String())
 	return rec, timerHandler.Subscribe(ctx)(c)
 }
 
@@ -93,6 +93,7 @@ var (
 	timerHandler        *timerhandler.Handler
 	notificationHandler *notificationhandler.Handler
 	notificationStorage notificationusecase.NotificationStorage
+	timerUseCase        timerhandler.TimerUseCase
 )
 
 var tickerServiceUrl = "localhost:50001"
@@ -131,7 +132,7 @@ func TestMain(m *testing.M) {
 	)
 	go ns.Start(ctx)
 
-	timerUseCase := timerusecase.New(ts, subst, timerService, es, ns)
+	timerUseCase = timerusecase.New(ts, subst, timerService, es, ns)
 	countdownUseCase := countdowntimerusecase.New(timerService, ts, es)
 	notificationUseCase := notificationusecase.New(notificationStorage)
 
@@ -219,8 +220,9 @@ func deleteNotification(t *testing.T, ctx context.Context, userIds []int64) {
 		go func(userId int64) {
 			defer wg.Done()
 			// for create notification we need create timer and delete
-			// for receive subscribe we need subsccribe on timer
+			// for receive subscribe we need subscribe on timer
 			for _, timer := range timers {
+				require.False(t, timer.Creator == userId, "timer creator equal userid ")
 				_, err := createTimer(ctx, timer.Creator, timer.CreateTimer())
 				require.NoError(t, err, "failed to create timer")
 				_, err = subscribe(ctx, userId, timer.ID)
@@ -231,6 +233,8 @@ func deleteNotification(t *testing.T, ctx context.Context, userIds []int64) {
 		}(userId)
 	}
 	wg.Wait()
+
+	time.Sleep(time.Second)
 
 	compareNotification(t, ctx, userTimers, notification.Delete)
 }
@@ -253,7 +257,7 @@ func expiredNotification(t *testing.T, ctx context.Context, userIds []int64) {
 			UserId: userId,
 			Timers: timers,
 		})
-		go func() {
+		go func(userId int64) {
 			defer wg.Done()
 			// for create notification we need create timer and delete
 			// for receive subscribe we need subsccribe on timer
@@ -263,7 +267,7 @@ func expiredNotification(t *testing.T, ctx context.Context, userIds []int64) {
 				_, err = subscribe(ctx, userId, timer.ID)
 				require.NoError(t, err, "subscribe failed")
 			}
-		}()
+		}(userId)
 	}
 	wg.Wait()
 
@@ -275,19 +279,21 @@ func expiredNotification(t *testing.T, ctx context.Context, userIds []int64) {
 func compareNotification(t *testing.T, ctx context.Context, userTimers []*UserWithTimers, nType notification.NotificationType) {
 	// check notifications is created
 	for _, ut := range userTimers {
-
-		notifications := make([]*notification.NotificationDTO, 0)
+		notifications := make([]*notification.NotificationDTO, 0, len(ut.Timers))
+		var rec *httptest.ResponseRecorder
+		var err error
 		// get user notifications, compare timerid from notifications and user timers
-		rec, err := userNotifications(ctx, ut.UserId)
+		rec, err = userNotifications(ctx, ut.UserId)
 		require.NoError(t, err, "failed to get user notifications")
 		require.Equal(t, http.StatusOK, rec.Result().StatusCode, "wrong status code")
-		// marshal request body
+
 		err = json.Unmarshal(rec.Body.Bytes(), &notifications)
 		require.NoError(t, err, "failed to unmarshal body")
 
 		sort.Slice(notifications, func(i, j int) bool { return notifications[i].TimerId().String() > notifications[j].TimerId().String() })
 		sort.Slice(ut.Timers, func(i, j int) bool { return ut.Timers[i].ID.String() > ut.Timers[j].ID.String() })
 		// compare ids
+
 		message, ok := compareId(ut.Timers, notifications)
 		require.True(t, ok, message)
 		// compare notifications type

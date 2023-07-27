@@ -53,6 +53,10 @@ func resetTimer(ctx context.Context, timerId uuid.UUID, userId int64) (*httptest
 	return rec, handler.ResetTimer(ctx)(c)
 }
 
+func randomPause(until time.Duration) {
+	time.Sleep(time.Duration(rand.Int63n(int64(until))))
+}
+
 func TestCountdownTimer(t *testing.T) {
 	var err error
 	ctx, cancel := context.WithCancel(context.Background())
@@ -71,10 +75,15 @@ func TestCountdownTimer(t *testing.T) {
 	_, err = createTimer(ctx, userId, timer.CreateTimer())
 	require.NoError(t, err, "create timer failed")
 
+	pauseMaxTime := time.Second * 2
 	timer = stop(t, ctx, timer, ptime)
+	randomPause(pauseMaxTime)
 	timer = start(t, ctx, timer)
+	randomPause(pauseMaxTime)
 	timer = reset(t, ctx, timer)
+	randomPause(pauseMaxTime)
 	timer = stop(t, ctx, timer, amidtime.Now())
+	randomPause(pauseMaxTime)
 	timer = reset(t, ctx, timer)
 
 	clearTimers(t, ctx, timer)
@@ -145,8 +154,12 @@ func reset(t *testing.T, ctx context.Context, timer *timermodel.Timer) *timermod
 
 	// check timer from request
 	tm := timerFromBody(t, rec)
-	require.Equal(t, tm.EndTime.Unix()-tm.Duration, now.Unix(), "reseted end time non equal")
 	require.Equal(t, tm.IsPaused, timer.IsPaused, "reset change pause status")
+	if timer.IsPaused {
+		require.Equal(t, tm.EndTime.Unix()-tm.PauseTime.Unix(), tm.Duration)
+	} else {
+		require.Equal(t, tm.EndTime.Unix()-now.Unix(), tm.Duration, "reseted end time non equal")
+	}
 
 	// compare timer from storage
 	timer, err = timerStorage.Timer(ctx, timer.ID)

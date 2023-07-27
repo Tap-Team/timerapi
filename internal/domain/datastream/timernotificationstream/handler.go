@@ -124,6 +124,14 @@ func (sh *StreamHandler) notification(ctx context.Context, ntion notification.No
 			offlineSubs = append(offlineSubs, userId)
 		}
 	}
+	sh.mu.Unlock()
+
+	// save unreaded notification in storage
+	for _, userId := range offlineSubs {
+		sh.notificationStorage.InsertNotification(ctx, userId, ntion)
+	}
+
+	sh.mu.Lock()
 	// send notification with subscribers to service streams
 	if len(offlineSubs) != 0 {
 		for _, stream := range sh.serviceStreams {
@@ -131,11 +139,6 @@ func (sh *StreamHandler) notification(ctx context.Context, ntion notification.No
 		}
 	}
 	sh.mu.Unlock()
-
-	// save unreaded notification in storage
-	for _, userId := range offlineSubs {
-		sh.notificationStorage.InsertNotification(ctx, userId, ntion)
-	}
 
 }
 
@@ -169,13 +172,10 @@ func (sh *StreamHandler) clearExpiredTimer(ctx context.Context, timer timermodel
 	// depending on the type delete or clear timer
 	switch timer.Type {
 	case timerfields.DATE:
-		wg := new(sync.WaitGroup)
-		wg.Add(2)
 		// delete timer from storage
-		go func() { sh.timerStorage.DeleteTimer(ctx, timer.ID); wg.Done() }()
+		sh.timerStorage.DeleteTimer(ctx, timer.ID)
 		// delete timer from subsriber storage with them subscribers
-		go func() { sh.subscriberStorage.DeleteTimer(ctx, timer.ID); wg.Done() }()
-		wg.Wait()
+		sh.subscriberStorage.DeleteTimer(ctx, timer.ID)
 	case timerfields.COUNTDOWN:
 		/*
 				to reset timer we need 2 things

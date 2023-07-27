@@ -71,12 +71,12 @@ func Init(
 //	@Param		vk_user_id	query	int64	true	"user id"
 //	@Param		debug		query	string	false	"you can add secret key to query for debug requests"
 //	@Produce	json
-//	@Param		subscribe\unsubscribe	body		timerevent.SubscribeEvent		true	"event to add\remove timers from event stream"
-//	@Success	200						{object}	notification.NotificationDTO	"notification"
-//	@Success	201						{object}	timerevent.ResetEvent			"reset event"
-//	@Success	202						{object}	timerevent.StopEvent			"stop event"
-//	@Success	203						{object}	timerevent.StartEvent			"start event"
-//	@Success	204						{object}	timerevent.UpdateEvent			"update event"
+//	@Param		event	body		timerevent.SubscribeEvent		true	"event to add\remove timers from event stream"
+//	@Success	200		{object}	notification.NotificationDTO	"notification"
+//	@Success	201		{object}	timerevent.ResetEvent			"reset event"
+//	@Success	202		{object}	timerevent.StopEvent			"stop event"
+//	@Success	203		{object}	timerevent.StartEvent			"start event"
+//	@Success	204		{object}	timerevent.UpdateEvent			"update event"
 //	@Router		/ws/timer [get]
 func (s *TimerSocket) TimerWS(c echo.Context) error {
 	// parse user id from query

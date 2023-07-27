@@ -147,7 +147,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("dial context failed, %s", err)
 	}
 	timerService = timerservice.GrpcClient(timerservicepb.NewTimerServiceClient(conn))
-
+	defer conn.Close()
 	ts := timerstorage.New(p)
 	timerStorage = ts
 	subStorage := subscriberstorage.New(r)

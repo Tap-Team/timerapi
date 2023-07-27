@@ -49,6 +49,7 @@ const (
 	UTC         timer_column = "utc"
 	Duration    timer_column = "duration"
 	IsDeleted   timer_column = "is_deleted"
+	CreatedAt   timer_column = "created_at"
 )
 
 const (

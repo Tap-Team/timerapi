@@ -7,8 +7,12 @@ import (
 	"io"
 	"log"
 
+	"github.com/Tap-Team/timerapi/internal/errorutils/timererror"
+	"github.com/Tap-Team/timerapi/pkg/exception"
 	"github.com/Tap-Team/timerapi/proto/timerservicepb"
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -25,13 +29,36 @@ type timerServiceClientGrpc struct {
 	client timerservicepb.TimerServiceClient
 }
 
+func GrpcError(err error) error {
+	statusErr, ok := status.FromError(err)
+	if !ok {
+		return err
+	}
+	switch statusErr.Code() {
+	case codes.AlreadyExists:
+		return timererror.ExceptionTimerExists()
+	case codes.NotFound:
+		return timererror.ExceptionTimerNotFound()
+	case codes.InvalidArgument:
+		return timererror.ExceptionWrongTimerTime()
+	case codes.Internal:
+		return exception.NewInternal(errors.New(statusErr.Message()))
+
+	default:
+		return err
+	}
+}
+
 func GrpcClient(client timerservicepb.TimerServiceClient) *timerServiceClientGrpc {
 	return &timerServiceClientGrpc{client: client}
 }
 
 func (c *timerServiceClientGrpc) Add(ctx context.Context, timerId uuid.UUID, endTime int64) error {
 	_, err := c.client.Add(ctx, &timerservicepb.AddEvent{TimerId: timerId[:], EndTime: endTime})
-	return err
+	if err != nil {
+		return GrpcError(err)
+	}
+	return nil
 }
 func (c *timerServiceClientGrpc) AddMany(ctx context.Context, timers map[uuid.UUID]int64) error {
 	events := make([]*timerservicepb.AddEvent, 0, len(timers))
@@ -40,22 +67,38 @@ func (c *timerServiceClientGrpc) AddMany(ctx context.Context, timers map[uuid.UU
 		events = append(events, &timerservicepb.AddEvent{TimerId: id[:], EndTime: endTime})
 	}
 	_, err := c.client.AddMany(ctx, &timerservicepb.AddManyEvent{Events: events})
-	return err
+	if err != nil {
+		return GrpcError(err)
+	}
+	return nil
 }
 func (c *timerServiceClientGrpc) Start(ctx context.Context, timerId uuid.UUID, endTime int64) error {
 	_, err := c.client.Start(ctx, &timerservicepb.StartEvent{TimerId: timerId[:], EndTime: endTime})
-	return err
+	if err != nil {
+		return GrpcError(err)
+	}
+	return nil
 }
 func (c *timerServiceClientGrpc) Stop(ctx context.Context, timerId uuid.UUID) error {
 	_, err := c.client.Stop(ctx, &timerservicepb.StopEvent{TimerId: timerId[:]})
-	return err
+	if err != nil {
+		return GrpcError(err)
+	}
+	return nil
 }
 func (c *timerServiceClientGrpc) Remove(ctx context.Context, timerId uuid.UUID) error {
 	_, err := c.client.Remove(ctx, &timerservicepb.RemoveEvent{TimerId: timerId[:]})
-	return err
+	if err != nil {
+		return GrpcError(err)
+	}
+	return nil
 }
 func (c *timerServiceClientGrpc) TimerTick(ctx context.Context) (<-chan []uuid.UUID, error) {
-	return c.serviceStream(ctx)
+	ch, err := c.serviceStream(ctx)
+	if err != nil {
+		return nil, GrpcError(err)
+	}
+	return ch, nil
 }
 
 func (c *timerServiceClientGrpc) serviceStream(ctx context.Context) (<-chan []uuid.UUID, error) {

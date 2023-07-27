@@ -61,11 +61,12 @@ func NewStart(
 
 type ResetEvent struct {
 	Event
-	EndTime amidtime.DateTime `json:"endTime"`
+	EndTime   amidtime.DateTime `json:"endTime"`
+	PauseTime amidtime.DateTime `json:"pauseTime"`
 }
 
-func NewReset(timerId uuid.UUID, endTime amidtime.DateTime) TimerEvent {
-	return &ResetEvent{Event: Event{Etype: Reset, Id: timerId}, EndTime: endTime}
+func NewReset(timerId uuid.UUID, endTime, pauseTime amidtime.DateTime) TimerEvent {
+	return &ResetEvent{Event: Event{Etype: Reset, Id: timerId}, EndTime: endTime, PauseTime: pauseTime}
 }
 
 type UpdateEvent struct {

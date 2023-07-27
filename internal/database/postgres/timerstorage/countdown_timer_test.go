@@ -73,16 +73,10 @@ func TestUpdateCountDownTimer(t *testing.T) {
 	pauseTime := amidtime.DateTime(time.Now().Add(time.Second * time.Duration(rand.Uint32())))
 	isPaused := rand.Int()%2 == 0
 	err = testTimerStorage.UpdatePauseTime(ctx, timer.ID, pauseTime, isPaused)
-	if err != nil {
-		t.Fatalf("update pause time test failed, %s", err)
-	}
+	require.NoError(t, err, "update pause time test failed")
 	// get countdown timer to compare
-	ctTimer, err := testTimerStorage.CountdownTimer(ctx, timer.ID)
-	if err != nil {
-		t.Fatalf("select countdown timer test failed, %s", err)
-	}
-	require.Equal(t, ctTimer.PauseTime.T().Unix(), pauseTime.T().Unix(), "update failed, pause time not equal")
-	if ctTimer.IsPaused != isPaused {
-		t.Fatal("update failed, is paused not equal")
-	}
+	ctTimer, err := testTimerStorage.Timer(ctx, timer.ID)
+	require.NoError(t, err, "failed get timer")
+	require.Equal(t, ctTimer.PauseTime.Unix(), pauseTime.Unix(), "update failed, pause time not equal")
+	require.Equal(t, ctTimer.IsPaused, isPaused, "update failed, is paused not equal")
 }

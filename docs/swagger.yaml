@@ -42,6 +42,8 @@ definitions:
     properties:
       endTime:
         type: integer
+      pauseTime:
+        type: integer
       timerId:
         type: string
       type:
@@ -290,6 +292,40 @@ paths:
       summary: DeleteTimer
       tags:
       - timers
+    get:
+      description: '"returns timer by param id"'
+      parameters:
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      - description: timer id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/timermodel.Timer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: TimerById
+      tags:
+      - timers
     put:
       consumes:
       - application/json
@@ -426,6 +462,11 @@ paths:
       - description: user id
         in: query
         name: vk_user_id
+        required: true
+        type: integer
+      - description: pause time, 1690465114
+        in: query
+        name: pauseTime
         required: true
         type: integer
       - description: you can add secret key to query for debug requests
@@ -618,6 +659,54 @@ paths:
       summary: CreateTimer
       tags:
       - timers
+  /timers/user:
+    get:
+      description: get all user timers with offset and limit, timers include created
+        by user and user subscriptions
+      parameters:
+      - description: you can add secret key to query for debug requests
+        in: query
+        name: debug
+        type: string
+      - description: user id
+        in: query
+        name: vk_user_id
+        required: true
+        type: integer
+      - description: offset
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - description: limit
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/timermodel.Timer'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echoconfig.ErrorResponse'
+      summary: TimersByUser
+      tags:
+      - timers
   /timers/user-created:
     get:
       description: get user created timers with offset and limit
@@ -726,7 +815,7 @@ paths:
         type: string
       - description: event to add\remove timers from event stream
         in: body
-        name: subscribe\unsubscribe
+        name: event
         required: true
         schema:
           $ref: '#/definitions/timerevent.SubscribeEvent'

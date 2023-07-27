@@ -257,7 +257,7 @@ var userSubscriptionsQuery = fmt.Sprintf(`
 		colorsql.ID,
 		typesql.ID,
 	),
-	sqlutils.Full(timersql.EndTime),
+	sqlutils.Full(timersql.CreatedAt, timersql.ID),
 )
 
 // return list of user subcriptions on timers
@@ -273,39 +273,9 @@ func (s *Storage) UserSubscriptions(ctx context.Context, userId int64, offset, l
 	return timers, nil
 }
 
-var userTimersQuery = fmt.Sprintf(`
-%s
-INNER JOIN %s ON %s = %s AND %s = $1 OR %s = $1
-GROUP BY %s
-ORDER BY %s
-LIMIT $2
-OFFSET $3
-`,
-	// default select timer query
-	selectTimerQueryTemplate,
-
-	subscribersql.Table,
-	// inner join by timer id
-	sqlutils.Full(timersql.ID),
-	sqlutils.Full(subscribersql.TimerId),
-
-	// inner join by userId = $1
-	sqlutils.Full(subscribersql.UserId),
-	// where creator = $2
-	sqlutils.Full(timersql.Creator),
-
-	sqlutils.Full(
-		countdowntimersql.TimerId,
-		timersql.ID,
-		colorsql.ID,
-		typesql.ID,
-	),
-	sqlutils.Full(timersql.EndTime),
-)
-
 var createdTimers = timerQueryTemplate(
 	fmt.Sprintf(`WHERE %s = $1`, sqlutils.Full(timersql.Creator)),
-) + fmt.Sprintf("ORDER BY %s LIMIT $2 OFFSET $3", sqlutils.Full(timersql.EndTime))
+) + fmt.Sprintf("ORDER BY %s LIMIT $2 OFFSET $3", sqlutils.Full(timersql.CreatedAt, timersql.ID))
 
 func (s *Storage) UserCreatedTimers(ctx context.Context, userId int64, offset, limit int) ([]*timermodel.Timer, error) {
 	rows, err := s.p.Pool.Query(ctx, createdTimers, userId, limit, offset)
@@ -318,6 +288,33 @@ func (s *Storage) UserCreatedTimers(ctx context.Context, userId int64, offset, l
 	}
 	return timers, nil
 }
+
+var userTimersQuery = fmt.Sprintf(`
+%s
+INNER JOIN %s ON %s = %s AND %s = $1
+GROUP BY %s
+ORDER BY %s
+LIMIT $2
+OFFSET $3
+`,
+	// default select timer query
+	selectTimerQueryTemplate,
+
+	subscribersql.Table,
+	// inner join by timer id
+	sqlutils.Full(timersql.ID),
+	sqlutils.Full(subscribersql.TimerId),
+	// inner join by userId = $1
+	sqlutils.Full(subscribersql.UserId),
+
+	sqlutils.Full(
+		countdowntimersql.TimerId,
+		timersql.ID,
+		colorsql.ID,
+		typesql.ID,
+	),
+	sqlutils.Full(timersql.CreatedAt, timersql.ID),
+)
 
 // return list of all user timers include subcriptions
 func (s *Storage) UserTimers(ctx context.Context, userId int64, offset, limit int) ([]*timermodel.Timer, error) {

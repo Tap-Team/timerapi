@@ -2,7 +2,10 @@ package invokeusecase
 
 import (
 	"context"
+	"errors"
+	"time"
 
+	"github.com/Tap-Team/timerapi/internal/errorutils/timererror"
 	"github.com/Tap-Team/timerapi/internal/model/timermodel"
 	"github.com/Tap-Team/timerapi/pkg/exception"
 	"github.com/google/uuid"
@@ -73,6 +76,9 @@ func (uc *UseCase) subscribe(ctx context.Context, timers []*timermodel.TimerSubs
 
 	timersEndTime := make(map[uuid.UUID]int64, len(timers))
 	for _, timer := range timers {
+		if timer.EndTime.Unix() <= time.Now().Unix() {
+			continue
+		}
 		timersEndTime[timer.ID] = timer.EndTime.Unix()
 	}
 	// in loop add timer ticker service timer with end time
@@ -89,6 +95,9 @@ func (uc *UseCase) subscribe(ctx context.Context, timers []*timermodel.TimerSubs
 		timer := timer
 		errgr.Go(func() error {
 			err := uc.subscriber.Subscribe(gctx, timer.ID, timer.Subscribers...)
+			if errors.Is(err, timererror.ExceptionUserAlreadySubscriber()) {
+				return nil
+			}
 			if err != nil {
 				return exception.Wrap(err, exception.NewCause("subscribe timer in cache storage", "subscribe", _PROVIDER))
 			}

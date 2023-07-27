@@ -1,6 +1,8 @@
 package timermodel
 
 import (
+	"time"
+
 	"github.com/Tap-Team/timerapi/internal/errorutils/timererror"
 	"github.com/Tap-Team/timerapi/internal/model/timermodel/timerfields"
 	"github.com/Tap-Team/timerapi/pkg/amidtime"
@@ -53,6 +55,9 @@ func (t *CreateTimer) Validate() error {
 		return err
 	}
 	if t.StartTime.T().After(t.EndTime.T()) {
+		return timererror.ExceptionWrongTimerTime()
+	}
+	if t.EndTime.T().Before(time.Now()) {
 		return timererror.ExceptionWrongTimerTime()
 	}
 	if t.ID == uuid.Nil {

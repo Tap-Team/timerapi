@@ -25,9 +25,7 @@ func sleepRandom(d time.Duration) {
 
 func checkInService(t *testing.T, ctx context.Context, timerId uuid.UUID) {
 	err := timerService.Remove(ctx, timerId)
-	s, ok := status.FromError(err)
-	require.True(t, ok, "wrong error type")
-	require.Equal(t, codes.NotFound, s.Code())
+	require.ErrorIs(t, err, timererror.ExceptionTimerNotFound())
 }
 
 func checkInStorage(t *testing.T, ctx context.Context, timerId uuid.UUID) {

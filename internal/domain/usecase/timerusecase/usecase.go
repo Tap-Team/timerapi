@@ -13,8 +13,6 @@ import (
 	"github.com/Tap-Team/timerapi/pkg/exception"
 	"github.com/Tap-Team/timerapi/pkg/saga"
 	"github.com/google/uuid"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 const _PROVIDER = "internal/domain/timerusecase"
@@ -83,12 +81,28 @@ func (uc *UseCase) UserCreatedTimers(ctx context.Context, userId int64, offset, 
 	return timers, nil
 }
 
+func (uc *UseCase) UserTimers(ctx context.Context, userId int64, offset, limit int) ([]*timermodel.Timer, error) {
+	timers, err := uc.timerStorage.UserTimers(ctx, userId, offset, limit)
+	if err != nil {
+		return nil, exception.Wrap(err, exception.NewCause("get user timers from storage", "UserTimers", _PROVIDER))
+	}
+	return timers, nil
+}
+
 func (uc *UseCase) TimerSubscribers(ctx context.Context, timerId uuid.UUID) ([]int64, error) {
 	subscribers, err := uc.subscriberStorage.TimerSubscribers(ctx, timerId)
 	if err != nil {
 		return nil, exception.Wrap(err, exception.NewCause("get timer subscribers", "TimerSubscribers", _PROVIDER))
 	}
 	return subscribers.Array(), nil
+}
+
+func (uc *UseCase) Timer(ctx context.Context, timerId uuid.UUID) (*timermodel.Timer, error) {
+	timer, err := uc.timerStorage.Timer(ctx, timerId)
+	if err != nil {
+		return nil, exception.Wrap(err, exception.NewCause("get timer from storage", "Timer", _PROVIDER))
+	}
+	return timer, nil
 }
 
 func (uc *UseCase) Create(ctx context.Context, creator int64, timer *timermodel.CreateTimer) error {
@@ -125,9 +139,6 @@ func (uc *UseCase) Create(ctx context.Context, creator int64, timer *timermodel.
 	})
 	// add timer end time in timer service
 	err = uc.timerService.Add(ctx, timer.ID, timer.EndTime.Unix())
-	if s, ok := status.FromError(err); ok && s.Code() == codes.AlreadyExists {
-		return exception.Wrap(timererror.ExceptionTimerExists(), exception.NewCause("add timer end time to timerService", "Create", _PROVIDER))
-	}
 	if err != nil {
 		return exception.Wrap(err, exception.NewCause("add timer end time to timerService", "Create", _PROVIDER))
 	}
@@ -156,18 +167,7 @@ func (uc *UseCase) Delete(ctx context.Context, timerId uuid.UUID, userId int64) 
 
 	// delete timer from service if not paused
 	if !timer.IsPaused {
-		err = uc.timerService.Remove(ctx, timerId)
-		if err != nil {
-			return exception.Wrap(err, exception.NewCause("delete timer from remote service", "Delete", _PROVIDER))
-		}
-		// register rollback delete timer from service function
-		saga.Register(func() {
-			uc.timerService.Add(
-				ctx,
-				timerId,
-				time.Time(timer.EndTime).Unix(),
-			)
-		})
+		uc.timerService.Remove(ctx, timerId)
 	}
 	// delete timer from storage
 	err = uc.timerStorage.DeleteTimer(ctx, timerId)

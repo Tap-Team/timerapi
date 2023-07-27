@@ -187,6 +187,76 @@ const docTemplate = `{
                 }
             }
         },
+        "/timers/user": {
+            "get": {
+                "description": "get all user timers with offset and limit, timers include created by user and user subscriptions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "timers"
+                ],
+                "summary": "TimersByUser",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "vk_user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "offset",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/timermodel.Timer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/timers/user-created": {
             "get": {
                 "description": "get user created timers with offset and limit",
@@ -328,6 +398,57 @@ const docTemplate = `{
             }
         },
         "/timers/{id}": {
+            "get": {
+                "description": "\"returns timer by param id\"",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "timers"
+                ],
+                "summary": "TimerById",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "you can add secret key to query for debug requests",
+                        "name": "debug",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "timer id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/timermodel.Timer"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/echoconfig.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "update user timer",
                 "consumes": [
@@ -587,6 +708,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "integer",
+                        "description": "pause time, 1690465114",
+                        "name": "pauseTime",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
                         "type": "string",
                         "description": "you can add secret key to query for debug requests",
                         "name": "debug",
@@ -830,7 +958,7 @@ const docTemplate = `{
                     },
                     {
                         "description": "event to add\\remove timers from event stream",
-                        "name": "subscribe\\unsubscribe",
+                        "name": "event",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -930,6 +1058,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "endTime": {
+                    "type": "integer"
+                },
+                "pauseTime": {
                     "type": "integer"
                 },
                 "timerId": {

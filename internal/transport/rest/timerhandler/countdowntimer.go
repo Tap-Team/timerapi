@@ -21,6 +21,7 @@ import (
 //	@Description	stop timer by timer id, only owner can stop timer, every subscriber (creator inclusive) will be send stop event
 //	@Tags			timers
 //	@Param			vk_user_id	query	int64	true	"user id"
+//	@Param			pauseTime	query	int64	true	"pause time, 1690465114"
 //	@Param			debug		query	string	false	"you can add secret key to query for debug requests"
 //	@Param			id			path	string	true	"timer id"
 //	@Success		204

@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE timers DROP COLUMN created_at;
+
+COMMIT;

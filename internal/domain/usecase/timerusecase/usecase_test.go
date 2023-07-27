@@ -48,13 +48,13 @@ func randomTimer(opts ...randomTimerOption) *timermodel.Timer {
 	return timer
 }
 
-func randomTimerList(size int, opts ...randomTimerOption) []*timermodel.Timer {
-	tl := make([]*timermodel.Timer, 0, size)
-	for i := 0; i < size; i++ {
-		tl = append(tl, randomTimer(opts...))
-	}
-	return tl
-}
+// func randomTimerList(size int, opts ...randomTimerOption) []*timermodel.Timer {
+// 	tl := make([]*timermodel.Timer, 0, size)
+// 	for i := 0; i < size; i++ {
+// 		tl = append(tl, randomTimer(opts...))
+// 	}
+// 	return tl
+// }
 
 type ESender struct{}
 
@@ -89,6 +89,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatalf("failed to start redis container, %s", err)
 	}
+	defer term(ctx)
 	timerStorage = timerstorage.New(p)
 	subscriberStorage = subscriberstorage.New(r)
 	conn, err := grpc.DialContext(ctx, tickerServiceUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))

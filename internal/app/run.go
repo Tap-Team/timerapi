@@ -97,7 +97,7 @@ func Run() {
 		timerStorage,
 	).Invoke(ctx)
 	if err != nil {
-		log.Fatalf("failed execute invoke use case, %s", err)
+		log.Printf("\nfailed execute invoke use case, %s", err)
 	}
 
 	timerhandler.Init(g, timerUseCase, countdowntimerUseCase)

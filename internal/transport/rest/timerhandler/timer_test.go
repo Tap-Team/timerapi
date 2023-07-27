@@ -48,22 +48,31 @@ func deleteTimer(ctx context.Context, userId int64, timerId uuid.UUID) (*httptes
 	return rec, handler.DeleteTimer(ctx)(c)
 }
 
+func getTimer(ctx context.Context, timerId uuid.UUID) (*httptest.ResponseRecorder, error) {
+	req := httptest.NewRequest(http.MethodGet, basePath("/:id"), &bytes.Buffer{})
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	c.SetParamNames("id")
+	c.SetParamValues(fmt.Sprint(timerId))
+	return rec, handler.Timer(ctx)(c)
+}
+
 func TestCRUD(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	userId := rand.Int63()
-	ct := randomTimer(func(t *timermodel.Timer) { t.Creator = userId })
+	randomtimer := randomTimer(func(t *timermodel.Timer) { t.Creator = userId })
 	settingsList := []*timermodel.TimerSettings{
 		randomTimerSettings(),
 	}
 	// test create timer
-	createTimerTest(t, ctx, ct, userId)
+	createTimerTest(t, ctx, randomtimer, userId)
 	// test update timer
 	for _, settings := range settingsList {
-		updateTimerTest(t, ctx, ct.ID, userId, settings)
+		updateTimerTest(t, ctx, randomtimer.ID, userId, settings)
 	}
 	// test delete timer
-	deleteTimerTest(t, ctx, ct.ID, userId)
+	deleteTimerTest(t, ctx, randomtimer.ID, userId)
 }
 
 func createTimerTest(t *testing.T, ctx context.Context, ct *timermodel.Timer, userId int64) {
@@ -89,6 +98,28 @@ func createTimerTest(t *testing.T, ctx context.Context, ct *timermodel.Timer, us
 	subs, err := subscriberStorage.TimerSubscribers(ctx, timer.ID)
 	require.NoError(t, err, "error while get subscribers")
 	require.True(t, len(subs) == 1 && subs[userId] == struct{}{}, "wrong data from subscribers storage")
+}
+
+func TestGetTimer(t *testing.T) {
+	const listSize = 100
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	timerList := randomTimerList(listSize)
+	for _, timer := range timerList {
+		_, err := createTimer(ctx, timer.Creator, timer.CreateTimer())
+		require.NoError(t, err, "failed create timer")
+	}
+	for _, timer := range timerList {
+		req, err := getTimer(ctx, timer.ID)
+		require.NoError(t, err, "failed to get timer")
+		require.Equal(t, http.StatusOK, req.Result().StatusCode, "wrong status code from request")
+		tm := new(timermodel.Timer)
+		err = json.Unmarshal(req.Body.Bytes(), tm)
+		require.NoError(t, err, "failed to encode req body")
+		message, ok := timer.Is(tm)
+		require.True(t, ok, message)
+	}
+	clearTimers(t, ctx, timerList...)
 }
 
 func updateTimerTest(t *testing.T, ctx context.Context, timerId uuid.UUID, userId int64, settings *timermodel.TimerSettings) {

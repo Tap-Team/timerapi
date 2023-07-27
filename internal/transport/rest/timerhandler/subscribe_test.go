@@ -15,6 +15,7 @@ import (
 	"github.com/Tap-Team/timerapi/internal/model/timermodel"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 )
 
 func randomTimerList(size int, opts ...randomTimerOption) []*timermodel.Timer {
@@ -30,7 +31,7 @@ func userSubscriptions(ctx context.Context, userId int64, offset, limit int) (*h
 	v.Set("vk_user_id", fmt.Sprint(userId))
 	v.Set("limit", fmt.Sprint(limit))
 	v.Set("offset", fmt.Sprint(offset))
-	req := httptest.NewRequest(http.MethodDelete, basePath("/user-subscriptions?"+v.Encode()), new(bytes.Buffer))
+	req := httptest.NewRequest(http.MethodGet, basePath("/user-subscriptions?"+v.Encode()), new(bytes.Buffer))
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 	return rec, handler.UserSubscriptions(ctx)(c)
@@ -41,10 +42,21 @@ func userCreated(ctx context.Context, userId int64, offset, limit int) (*httptes
 	v.Set("vk_user_id", fmt.Sprint(userId))
 	v.Set("limit", fmt.Sprint(limit))
 	v.Set("offset", fmt.Sprint(offset))
-	req := httptest.NewRequest(http.MethodDelete, basePath("/user-created?"+v.Encode()), new(bytes.Buffer))
+	req := httptest.NewRequest(http.MethodGet, basePath("/user-created?"+v.Encode()), new(bytes.Buffer))
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 	return rec, handler.UserCreated(ctx)(c)
+}
+
+func timersByUser(ctx context.Context, userId int64, offset, limit int) (*httptest.ResponseRecorder, error) {
+	v := make(url.Values)
+	v.Set("vk_user_id", fmt.Sprint(userId))
+	v.Set("limit", fmt.Sprint(limit))
+	v.Set("offset", fmt.Sprint(offset))
+	req := httptest.NewRequest(http.MethodGet, basePath("/user-created?"+v.Encode()), new(bytes.Buffer))
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	return rec, handler.TimersByUser(ctx)(c)
 }
 
 func subscribe(ctx context.Context, userId int64, timerId uuid.UUID) (*httptest.ResponseRecorder, error) {
@@ -77,6 +89,7 @@ func TestUserTimers(t *testing.T) {
 	createTimersTest(t, ctx, userSubscriptions)
 
 	subscribeTest(t, ctx, userId, userCreatedTimers, userSubscriptions)
+	userTimersTest(t, ctx, userId, userCreatedTimers, userSubscriptions)
 	createdTest(t, ctx, userId, userCreatedTimers)
 
 	clearTimers(t, ctx, userCreatedTimers...)
@@ -185,6 +198,53 @@ func subscribeTest(t *testing.T, ctx context.Context, userId int64, created, sub
 		offset += len(timers)
 	}
 	require.Equal(t, subAmount, offset, "wrong offset amount after unsubscribe")
+
+	for _, id := range subsId {
+		unsubscribe(ctx, userId, id)
+	}
+}
+
+func userTimersTest(t *testing.T, ctx context.Context, userId int64, createdTimers []*timermodel.Timer, subscribeTimers []*timermodel.Timer) {
+	var err error
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// subscribe timers
+	for _, timer := range subscribeTimers {
+		_, err = subscribe(ctx, userId, timer.ID)
+		require.NoError(t, err, "failed to subscribe")
+	}
+
+	// get timers from request
+	timers := make([]*timermodel.Timer, 0, len(createdTimers)+len(subscribeTimers))
+	req, err := timersByUser(ctx, userId, 0, len(createdTimers)+len(subscribeTimers)+1)
+	require.NoError(t, err, "failed to get timers by user")
+	err = json.Unmarshal(req.Body.Bytes(), &timers)
+	require.NoError(t, err, "failed umarhsal body")
+
+	expected := make([]*timermodel.Timer, 0, len(createdTimers)+len(subscribeTimers))
+	expected = append(expected, createdTimers...)
+	expected = append(expected, subscribeTimers...)
+
+	// compare timers
+	sort.Slice(expected, func(i, j int) bool { return expected[i].ID.String() < expected[j].ID.String() })
+	sort.Slice(timers, func(i, j int) bool { return timers[i].ID.String() < timers[j].ID.String() })
+
+	res := slices.CompareFunc(expected, timers, func(t1, t2 *timermodel.Timer) int {
+		field, ok := t1.Is(t2)
+		if ok {
+			return 0
+		}
+		t.Logf("field %s no equal", field)
+		return -1
+	})
+	require.True(t, res == 0, "timers not equal")
+
+	// unsubscribe from timers
+	for _, timer := range subscribeTimers {
+		_, err = unsubscribe(ctx, userId, timer.ID)
+		require.NoError(t, err, "failed to subscribe")
+	}
 }
 
 func createdTest(t *testing.T, ctx context.Context, userId int64, created []*timermodel.Timer) {
