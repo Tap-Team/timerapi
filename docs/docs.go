@@ -1122,6 +1122,9 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "endTime": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -1247,6 +1250,9 @@ const docTemplate = `{
                 },
                 "description": {
                     "type": "string"
+                },
+                "endTime": {
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string"

@@ -22,6 +22,7 @@ type TimerServiceClient interface {
 	Start(ctx context.Context, timerId uuid.UUID, endTime int64) error
 	Stop(ctx context.Context, timerId uuid.UUID) error
 	Remove(ctx context.Context, timerId uuid.UUID) error
+	Update(ctx context.Context, timerId uuid.UUID, endTime int64) error
 	TimerTick(ctx context.Context) (<-chan []uuid.UUID, error)
 }
 
@@ -93,6 +94,15 @@ func (c *timerServiceClientGrpc) Remove(ctx context.Context, timerId uuid.UUID) 
 	}
 	return nil
 }
+
+func (c *timerServiceClientGrpc) Update(ctx context.Context, timerId uuid.UUID, endTime int64) error {
+	_, err := c.client.Update(ctx, &timerservicepb.UpdateEvent{TimerId: timerId[:], EndTime: endTime})
+	if err != nil {
+		return GrpcError(err)
+	}
+	return nil
+}
+
 func (c *timerServiceClientGrpc) TimerTick(ctx context.Context) (<-chan []uuid.UUID, error) {
 	ch, err := c.serviceStream(ctx)
 	if err != nil {

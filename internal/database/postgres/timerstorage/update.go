@@ -39,19 +39,25 @@ func (s *Storage) UpdateTime(ctx context.Context, timerId uuid.UUID, endTime ami
 var updateTimerQuery = fmt.Sprintf(
 	`
 	UPDATE %s 
-	SET %s = $1, %s = $2, %s = %s, %s = $4
+	SET %s = $1, %s = $2, %s = %s, %s = $4, %s = $5,
+	%s = %s + extract(epoch FROM ($5 - %s))
 	FROM %s 
-	WHERE %s = $5 AND %s = $3
+	WHERE %s = $6 AND %s = $3
 	`,
-	timersql.Table,
 
+	timersql.Table,
 	// update variables
 	timersql.Name,
 	timersql.Description,
 	timersql.ColorId,
 	sqlutils.Full(colorsql.ID),
 	timersql.WithMusic,
+	timersql.EndTime,
 
+	// update duration
+	timersql.Duration,
+	timersql.Duration,
+	timersql.EndTime,
 	// update from
 	colorsql.Table,
 
@@ -64,17 +70,17 @@ func (s *Storage) UpdateTimer(ctx context.Context, timerId uuid.UUID, timerSetti
 	cmd, err := s.p.Pool.Exec(
 		ctx,
 		updateTimerQuery,
-		timerSettings.Name, timerSettings.Description, timerSettings.Color, timerSettings.WithMusic,
+		timerSettings.Name, timerSettings.Description, timerSettings.Color, timerSettings.WithMusic, timerSettings.EndTime,
 		timerId,
 	)
 	if err != nil {
-		return Error(err, exception.NewCause("update timer endTime", "UpdateEndTime", _PROVIDER))
+		return Error(err, exception.NewCause("update timer", "UpdateTimer", _PROVIDER))
 	}
 	if cmd.RowsAffected() == 0 {
-		return Error(timererror.ExceptionTimerNotFound(), exception.NewCause("update timer endTime", "UpdateEndTime", _PROVIDER))
+		return Error(timererror.ExceptionTimerNotFound(), exception.NewCause("update timer endTime", "UpdateTimer", _PROVIDER))
 	}
 	if cmd.RowsAffected() > 1 {
-		return Error(errors.New("many than 1 rows was updated"), exception.NewCause("update timer end time", "UpdateEndTime", _PROVIDER))
+		return Error(errors.New("many than 1 rows was updated"), exception.NewCause("update timer end time", "UpdateTimer", _PROVIDER))
 	}
 	return nil
 }

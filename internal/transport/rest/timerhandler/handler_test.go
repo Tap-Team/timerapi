@@ -75,6 +75,7 @@ func randomTimerSettings(opts ...timerSettingsOption) *timermodel.TimerSettings 
 		timerfields.Description(amidstr.MakeString(timerfields.DescriptionMaxSize)),
 		timerfields.BLUE,
 		rand.Intn(3)%2 == 0,
+		amidtime.DateTime(time.Now().Add(time.Duration(rand.Int31())*time.Second)),
 	)
 	for _, opt := range opts {
 		opt(settings)
@@ -93,6 +94,9 @@ func compareTimerSettings(timer *timermodel.Timer, settings *timermodel.TimerSet
 		return false
 	}
 	if timer.WithMusic != settings.WithMusic {
+		return false
+	}
+	if timer.EndTime.Unix() != settings.EndTime.Unix() {
 		return false
 	}
 	return true

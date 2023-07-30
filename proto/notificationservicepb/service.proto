@@ -7,6 +7,7 @@ option go_package = "github.com/Tap-Team/timerapi/proto/notificationservicepb";
 package notificationservicepb;
 
 message Timer {
+    bytes id = 1;
     string name = 2;
     string description = 3;
     string type = 4;

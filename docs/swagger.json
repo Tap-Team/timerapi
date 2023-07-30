@@ -1114,6 +1114,9 @@
                 "description": {
                     "type": "string"
                 },
+                "endTime": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -1239,6 +1242,9 @@
                 },
                 "description": {
                     "type": "string"
+                },
+                "endTime": {
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string"

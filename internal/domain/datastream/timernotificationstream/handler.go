@@ -114,6 +114,9 @@ func (sh *StreamHandler) notification(ctx context.Context, ntion notification.No
 	sh.mu.Lock()
 	// in range send to every stream subscriber notification, if user offline send to external service
 	for userId := range timerSubscribers {
+		if ntion.Type() == notification.Delete && ntion.Timer().Creator == userId {
+			continue
+		}
 		// if subscriber online send timerId to stream
 		if streamp, ok := sh.subscribers[userId]; ok {
 			for _, stream := range streamp {

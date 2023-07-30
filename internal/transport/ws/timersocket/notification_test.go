@@ -68,10 +68,6 @@ func notificationDelete(t *testing.T, ctx context.Context, conns []*WsConn) {
 		require.NoError(t, err, "create timer failed")
 		_, err = deleteTimer(ctx, conn.UserId(), timer.ID)
 		require.NoError(t, err, "delete timer failed")
-		// list of connection timers
-		tms := make([]*timermodel.Timer, 0, timersPerConnection)
-		tms = append(tms, timer)
-
 		timerList := randomTimerList(timersPerConnection-1, func(t *timermodel.Timer) {
 			t.Type = timerfields.DATE
 			if rand.Int63()%2 == 0 {
@@ -80,6 +76,9 @@ func notificationDelete(t *testing.T, ctx context.Context, conns []*WsConn) {
 		})
 		// in loop create, subscribe and delete random timer
 		// append this timer in connection timers
+		// list of connection timers
+		// if we delete own timer, notification handler don`t send delete notification
+		tms := make([]*timermodel.Timer, 0, timersPerConnection)
 		for _, tm := range timerList {
 			_, err := createTimer(ctx, tm.Creator, tm.CreateTimer())
 			require.NoError(t, err, "create timer failed")

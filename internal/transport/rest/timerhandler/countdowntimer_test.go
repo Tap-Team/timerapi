@@ -140,6 +140,7 @@ func start(t *testing.T, ctx context.Context, timer *timermodel.Timer) *timermod
 	// compare timer from storage
 	timer, err = timerStorage.Timer(ctx, timer.ID)
 	require.NoError(t, err, "failed get timer from storage")
+	fmt.Println(tm.Duration, timer.Duration)
 	field, ok := timer.Is(tm)
 	require.True(t, ok, "timer from requrest not equal timer from database, %s no equal", field)
 

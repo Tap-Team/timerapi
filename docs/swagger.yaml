@@ -82,6 +82,8 @@ definitions:
         $ref: '#/definitions/timerfields.Color'
       description:
         type: string
+      endTime:
+        type: integer
       name:
         type: string
       timerId:
@@ -169,6 +171,8 @@ definitions:
         $ref: '#/definitions/timerfields.Color'
       description:
         type: string
+      endTime:
+        type: integer
       name:
         type: string
       withMusic:

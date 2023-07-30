@@ -184,7 +184,9 @@ func (uc *UseCase) Delete(ctx context.Context, timerId uuid.UUID, userId int64) 
 func (uc *UseCase) Update(ctx context.Context, timerId uuid.UUID, userId int64, settings *timermodel.TimerSettings) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
 	defer cancel()
-	_, err := uc.checkAccess(ctx, userId, timerId)
+	var saga saga.Saga
+	defer saga.Rollback()
+	timer, err := uc.checkAccess(ctx, userId, timerId)
 	if err != nil {
 		return exception.Wrap(err, exception.NewCause("check access", "Update", _PROVIDER))
 	}
@@ -192,7 +194,17 @@ func (uc *UseCase) Update(ctx context.Context, timerId uuid.UUID, userId int64, 
 	if err != nil {
 		return exception.Wrap(err, exception.NewCause("update timer in storage", "Update", _PROVIDER))
 	}
+	saga.Register(func() {
+		uc.timerStorage.UpdateTimer(ctx, timer.ID, timermodel.NewTimerSettings(timer.Name, timer.Description, timer.Color, timer.WithMusic, timer.EndTime))
+	})
+	if timer.EndTime != settings.EndTime {
+		err = uc.timerService.Update(ctx, timerId, settings.EndTime.Unix())
+		if err != nil {
+			return exception.Wrap(err, exception.Wrap(err, exception.NewCause("update end time in timerservice", "Update", _PROVIDER)))
+		}
+	}
 	uc.esender.Send(timerevent.NewUpdate(timerId, *settings))
+	saga.OK()
 	return nil
 }
 

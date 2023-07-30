@@ -11,9 +11,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/Tap-Team/timerapi/internal/errorutils/timererror"
 	"github.com/Tap-Team/timerapi/internal/model/timermodel"
+	"github.com/Tap-Team/timerapi/pkg/amidtime"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
@@ -100,30 +102,14 @@ func createTimerTest(t *testing.T, ctx context.Context, ct *timermodel.Timer, us
 	require.True(t, len(subs) == 1 && subs[userId] == struct{}{}, "wrong data from subscribers storage")
 }
 
-func TestGetTimer(t *testing.T) {
-	const listSize = 100
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	timerList := randomTimerList(listSize)
-	for _, timer := range timerList {
-		_, err := createTimer(ctx, timer.Creator, timer.CreateTimer())
-		require.NoError(t, err, "failed create timer")
-	}
-	for _, timer := range timerList {
-		req, err := getTimer(ctx, timer.ID)
-		require.NoError(t, err, "failed to get timer")
-		require.Equal(t, http.StatusOK, req.Result().StatusCode, "wrong status code from request")
-		tm := new(timermodel.Timer)
-		err = json.Unmarshal(req.Body.Bytes(), tm)
-		require.NoError(t, err, "failed to encode req body")
-		message, ok := timer.Is(tm)
-		require.True(t, ok, message)
-	}
-	clearTimers(t, ctx, timerList...)
-}
-
 func updateTimerTest(t *testing.T, ctx context.Context, timerId uuid.UUID, userId int64, settings *timermodel.TimerSettings) {
 	var err error
+	// get timer from storage and compare data with input settings
+	timer, err := timerStorage.Timer(ctx, timerId)
+	require.NoError(t, err, "get timer from storage failed")
+	if rand.Int63()%2 == 0 {
+		settings.EndTime = amidtime.DateTime(time.Unix(timer.EndTime.Unix()-timer.Duration/2, 0))
+	}
 
 	// default update timer
 	rec, err := updateTimer(ctx, userId, timerId, settings)
@@ -135,10 +121,14 @@ func updateTimerTest(t *testing.T, ctx context.Context, timerId uuid.UUID, userI
 	require.ErrorIs(t, err, timererror.ExceptionTimerNotFound(), "update no exists timer wrong error")
 
 	// get timer from storage and compare data with input settings
-	timer, err := timerStorage.Timer(ctx, timerId)
+	tm, err := timerStorage.Timer(ctx, timerId)
 	require.NoError(t, err, "get timer from storage failed")
-	compareTimerSettings(timer, settings)
-	require.True(t, compareTimerSettings(timer, settings), "timer update failed, timer not updated")
+	compareTimerSettings(tm, settings)
+	require.True(t, compareTimerSettings(tm, settings), "timer update failed, timer not updated")
+
+	addedDuration := settings.EndTime.Unix() - timer.EndTime.Unix()
+	require.Equal(t, timer.Duration+addedDuration, tm.Duration, "duration not updated")
+
 }
 
 func deleteTimerTest(t *testing.T, ctx context.Context, timerId uuid.UUID, userId int64) {
@@ -159,4 +149,26 @@ func deleteTimerTest(t *testing.T, ctx context.Context, timerId uuid.UUID, userI
 	// try delete no exists timer
 	_, err = deleteTimer(ctx, userId, timerId)
 	require.ErrorIs(t, timererror.ExceptionTimerNotFound(), err, "delete no exists timer wrong error")
+}
+
+func TestGetTimer(t *testing.T) {
+	const listSize = 100
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	timerList := randomTimerList(listSize)
+	for _, timer := range timerList {
+		_, err := createTimer(ctx, timer.Creator, timer.CreateTimer())
+		require.NoError(t, err, "failed create timer")
+	}
+	for _, timer := range timerList {
+		req, err := getTimer(ctx, timer.ID)
+		require.NoError(t, err, "failed to get timer")
+		require.Equal(t, http.StatusOK, req.Result().StatusCode, "wrong status code from request")
+		tm := new(timermodel.Timer)
+		err = json.Unmarshal(req.Body.Bytes(), tm)
+		require.NoError(t, err, "failed to encode req body")
+		message, ok := timer.Is(tm)
+		require.True(t, ok, message)
+	}
+	clearTimers(t, ctx, timerList...)
 }

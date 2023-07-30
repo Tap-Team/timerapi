@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/SevereCloud/vksdk/v2/api"
 	"github.com/Tap-Team/timerapi/internal/config"
 	"github.com/Tap-Team/timerapi/internal/database/postgres/notificationstorage"
 	"github.com/Tap-Team/timerapi/internal/database/postgres/timerstorage"
@@ -26,8 +27,7 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
-	"github.com/Tap-Team/timerapi/internal/transport/grpcserver"
-	"github.com/Tap-Team/timerapi/internal/transport/grpcserver/notificationservice"
+	"github.com/Tap-Team/timerapi/internal/transport/bot"
 	"github.com/Tap-Team/timerapi/internal/transport/rest/notificationhandler"
 	"github.com/Tap-Team/timerapi/internal/transport/rest/timerhandler"
 	"github.com/Tap-Team/timerapi/internal/transport/ws/timersocket"
@@ -122,19 +122,26 @@ func Run() {
 		wg.Done()
 	}()
 
+	// 211250278
 	go func() {
-		notificationService := notificationservice.New(notificationStream)
-
-		addr := config.NotificationServer.Address()
-		server := grpcserver.New(
-			&grpcserver.Services{
-				NotificationService: notificationService,
-			},
-		)
-		err := server.ListenAndServe(addr)
-		log.Fatalf("notification server start failed, %s", err)
+		b := bot.New(api.NewVK(config.VK.BotToken), notificationStream)
+		b.Run(ctx)
 		wg.Done()
 	}()
+
+	// go func() {
+	// 	notificationService := notificationservice.New(notificationStream)
+
+	// 	addr := config.NotificationServer.Address()
+	// 	server := grpcserver.New(
+	// 		&grpcserver.Services{
+	// 			NotificationService: notificationService,
+	// 		},
+	// 	)
+	// 	err := server.ListenAndServe(addr)
+	// 	log.Fatalf("notification server start failed, %s", err)
+	// 	wg.Done()
+	// }()
 	wg.Wait()
 }
 

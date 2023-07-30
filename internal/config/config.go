@@ -60,6 +60,7 @@ func (c ServerConfig) Address() string {
 type VkConfig struct {
 	Key      string `yaml:"secret_key"`
 	DebugKey string `yaml:"debug_key"`
+	BotToken string `yaml:"bot_token"`
 }
 
 type TickerConfig struct {

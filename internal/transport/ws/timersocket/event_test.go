@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"reflect"
 	"sort"
 	"sync"
 	"testing"
@@ -65,6 +64,7 @@ func randomTimerSettings(opts ...timerSettingsOption) *timermodel.TimerSettings 
 		timerfields.Description(amidstr.MakeString(timerfields.DescriptionMaxSize)),
 		timerfields.BLUE,
 		rand.Intn(3)%2 == 0,
+		amidtime.DateTime(time.Now().Add(time.Duration(rand.Int31())*time.Second)),
 	)
 	for _, opt := range opts {
 		opt(settings)
@@ -342,7 +342,11 @@ func updateEvent(t *testing.T, ctx context.Context, conns []*WsConn, timers []*t
 	}
 	compare := func(events []*timerevent.UpdateEvent) {
 		for _, event := range events {
-			require.True(t, reflect.DeepEqual(event.TimerSettings, *timerSettings), "update event timer settings no equal")
+			require.Equal(t, event.Name, timerSettings.Name, "name not equal")
+			require.Equal(t, event.Description, timerSettings.Description, "description not equal")
+			require.Equal(t, event.Color, timerSettings.Color, "color not equal")
+			require.Equal(t, event.WithMusic, timerSettings.WithMusic, "with music not equal")
+			require.Equal(t, event.EndTime.Unix(), timerSettings.EndTime.Unix(), "end time not equal")
 		}
 	}
 	receiveEvent(t, ctx, conns, timers[:len(timers)/x], compare)
