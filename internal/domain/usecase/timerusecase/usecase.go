@@ -190,6 +190,9 @@ func (uc *UseCase) Update(ctx context.Context, timerId uuid.UUID, userId int64, 
 	if err != nil {
 		return exception.Wrap(err, exception.NewCause("check access", "Update", _PROVIDER))
 	}
+	if timer.EndTime.Unix()-time.Now().Unix() < timermodel.MIN_TIMER_DURATION {
+		return timererror.ExceptionWrongTimerTime()
+	}
 	err = uc.timerStorage.UpdateTimer(ctx, timerId, settings)
 	if err != nil {
 		return exception.Wrap(err, exception.NewCause("update timer in storage", "Update", _PROVIDER))

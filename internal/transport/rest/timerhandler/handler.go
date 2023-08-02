@@ -60,7 +60,7 @@ func Init(e *echo.Group, timerUseCase TimerUseCase, countdownTimerUseCase Countd
 	group.GET("/:id", handler.Timer(ctx))
 
 	group.POST("/:id/subscribe", handler.Subscribe(ctx))
-	group.POST("/:id/unsubscribe", handler.Unsubscribe(ctx))
+	group.DELETE("/:id/unsubscribe", handler.Unsubscribe(ctx))
 
 	group.PATCH("/:id/stop", handler.StopTimer(ctx))
 	group.PATCH("/:id/start", handler.StartTimer(ctx))

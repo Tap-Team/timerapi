@@ -61,7 +61,7 @@ func deleteTimer(ctx context.Context, userId int64, timerId uuid.UUID) (*httptes
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 	c.SetParamNames("id")
-	c.SetParamValues(fmt.Sprint(timerId))
+	c.SetParamValues(timerId.String())
 	return rec, timerHandler.DeleteTimer(ctx)(c)
 }
 

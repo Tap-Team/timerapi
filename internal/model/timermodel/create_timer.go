@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const MIN_TIMER_DURATION = 1
+const MIN_TIMER_DURATION = 30
 
 type CreateTimer struct {
 	ID          uuid.UUID               `json:"id"`
@@ -56,10 +56,10 @@ func (t *CreateTimer) Validate() error {
 	if err != nil {
 		return err
 	}
-	if t.StartTime.T().After(t.EndTime.T()) {
+	if t.EndTime.Unix()-t.StartTime.Unix() < MIN_TIMER_DURATION {
 		return timererror.ExceptionWrongTimerTime()
 	}
-	if t.EndTime.Unix()-time.Now().Unix() < MIN_TIMER_DURATION {
+	if t.EndTime.Unix()-time.Now().Unix() < MIN_TIMER_DURATION/2 {
 		return timererror.ExceptionWrongTimerTime()
 	}
 	if t.ID == uuid.Nil {

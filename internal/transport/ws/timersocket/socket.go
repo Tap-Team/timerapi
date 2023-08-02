@@ -2,6 +2,7 @@ package timersocket
 
 import (
 	"context"
+	"net/http"
 	"strconv"
 
 	"github.com/Tap-Team/timerapi/internal/model/notification"
@@ -13,7 +14,11 @@ import (
 )
 
 var (
-	upgrader = websocket.Upgrader{}
+	upgrader = websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
 )
 
 const _PROVIDER = "internal/transport/ws/timersocket"
