@@ -12,7 +12,7 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.5
 	github.com/jackc/pgx/v5 v5.4.1
-	github.com/labstack/echo/v4 v4.10.2
+	github.com/labstack/echo/v4 v4.11.1
 	github.com/redis/go-redis/v9 v9.0.5
 	github.com/stretchr/testify v1.8.4
 	github.com/swaggo/echo-swagger v1.4.0
@@ -22,7 +22,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/redis v0.21.0
 	go.opentelemetry.io/otel/trace v1.3.0
 	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea
-	golang.org/x/net v0.12.0
+	golang.org/x/net v0.13.0
 	golang.org/x/sync v0.3.0
 	google.golang.org/grpc v1.53.0
 	google.golang.org/protobuf v1.30.0

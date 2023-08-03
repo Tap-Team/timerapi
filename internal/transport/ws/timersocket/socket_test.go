@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -29,6 +31,8 @@ import (
 	"github.com/Tap-Team/timerapi/pkg/postgres"
 	"github.com/Tap-Team/timerapi/pkg/rediscontainer"
 	"github.com/Tap-Team/timerapi/proto/timerservicepb"
+	"github.com/labstack/echo/v4/middleware"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
@@ -125,6 +129,7 @@ func TestMain(m *testing.M) {
 	handler = timerhandler.New(countdownUseCase, timerUseCase)
 	timersocket.Init(e.Group(""), es, ns)
 
+	e.Use(middleware.Recover())
 	server = httptest.NewServer(e)
 	defer server.Close()
 
@@ -138,9 +143,9 @@ type WsConn struct {
 	ns     chan notification.Notification
 }
 
-func NewConn(t *testing.T, s *httptest.Server, userId int64) *WsConn {
+func NewConn(t *testing.T, ctx context.Context, s *httptest.Server, userId int64) *WsConn {
 	u := "ws" + strings.TrimPrefix(s.URL, "http")
-	ws, _, err := websocket.DefaultDialer.Dial(u+"/ws/timer?vk_user_id="+fmt.Sprint(userId), nil)
+	ws, _, err := websocket.DefaultDialer.DialContext(ctx, u+"/ws/timer?vk_user_id="+fmt.Sprint(userId), nil)
 	require.NoError(t, err, "failed to start websocket")
 	return &WsConn{
 		userId: userId,
@@ -155,13 +160,18 @@ func (ws *WsConn) UserId() int64 {
 }
 
 func (ws *WsConn) Listen(t *testing.T, ctx context.Context) {
+Loop:
 	for {
 		select {
 		case <-ctx.Done():
+			break Loop
 		default:
 			_, b, err := ws.ws.ReadMessage()
+			if errors.Is(err, net.ErrClosed) {
+				break Loop
+			}
 			if err != nil {
-				t.Logf("\nfailed to receive message from websocket connection, %s", err)
+				continue
 			}
 			ws.matchMessage(t, b)
 		}
@@ -175,7 +185,7 @@ func (ws *WsConn) matchMessage(t *testing.T, data []byte) {
 
 	err := json.Unmarshal(data, &tp)
 	if err != nil {
-		log.Printf("\nfailed to get message type from websocket connection, %s", err)
+		log.Printf("failed to get message type from websocket connection, %s", err)
 	}
 
 	switch tp.Type {
@@ -183,42 +193,42 @@ func (ws *WsConn) matchMessage(t *testing.T, data []byte) {
 		n := new(notification.NotificationDTO)
 		err = json.Unmarshal(data, n)
 		if err != nil {
-			t.Logf("\nfailed to unmarshal delete notification")
+			t.Logf("failed to unmarshal delete notification")
 		}
 		ws.ns <- n
 	case string(notification.Expired):
 		n := new(notification.NotificationDTO)
 		err = json.Unmarshal(data, n)
 		if err != nil {
-			t.Logf("\nfailed to unmarshal expired notification")
+			t.Logf("failed to unmarshal expired notification")
 		}
 		ws.ns <- n
 	case string(timerevent.Reset):
 		er := new(timerevent.ResetEvent)
 		err = json.Unmarshal(data, er)
 		if err != nil {
-			t.Logf("\nfailed to unmarshal reset event")
+			t.Logf("failed to unmarshal reset event")
 		}
 		ws.es <- er
 	case string(timerevent.Stop):
 		est := new(timerevent.StopEvent)
 		err = json.Unmarshal(data, est)
 		if err != nil {
-			t.Logf("\nfailed to unmarshal stop event")
+			t.Logf("failed to unmarshal stop event")
 		}
 		ws.es <- est
 	case string(timerevent.Start):
 		est := new(timerevent.StartEvent)
 		err = json.Unmarshal(data, est)
 		if err != nil {
-			t.Logf("\nfailed to unmarshal start event")
+			t.Logf("failed to unmarshal start event")
 		}
 		ws.es <- est
 	case string(timerevent.Update):
 		eu := new(timerevent.UpdateEvent)
 		err = json.Unmarshal(data, eu)
 		if err != nil {
-			t.Logf("\nfailed to unmarshal update event")
+			t.Logf("failed to unmarshal update event")
 		}
 		ws.es <- eu
 	}
@@ -240,4 +250,15 @@ func (ws *WsConn) EventStream() <-chan timerevent.TimerEvent {
 
 func (ws *WsConn) NotificationStream() <-chan notification.Notification {
 	return ws.ns
+}
+
+func (ws *WsConn) Close() error {
+	var err error
+	// log.Printf("close websocket: %s", ws.ws.LocalAddr())
+	cm := websocket.FormatCloseMessage(websocket.CloseNormalClosure, "")
+	err = ws.ws.WriteMessage(websocket.CloseMessage, cm)
+	if err != nil {
+		return fmt.Errorf("failed to send close message, %s", err)
+	}
+	return nil
 }

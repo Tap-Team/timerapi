@@ -182,7 +182,7 @@ func TestEvents(t *testing.T) {
 	}
 	conns := make([]*WsConn, 0)
 	for _, userId := range userIds {
-		conn := NewConn(t, server, userId)
+		conn := NewConn(t, ctx, server, userId)
 		conns = append(conns, conn)
 		go conn.Listen(t, ctx)
 	}
@@ -206,6 +206,11 @@ func TestEvents(t *testing.T) {
 	updateEvent(t, ctx, conns, timers, timersIds)
 	personalEvent(t, ctx, conns, timers, timersIds)
 	clearTimers(t, ctx, timers...)
+
+	for _, conn := range conns {
+		err := conn.Close()
+		require.NoError(t, err, "failed to close conn")
+	}
 }
 func resetEvent(t *testing.T, ctx context.Context, conns []*WsConn, timers []*timermodel.Timer, timersIds []uuid.UUID) {
 	x := 5
@@ -361,7 +366,6 @@ func updateEvent(t *testing.T, ctx context.Context, conns []*WsConn, timers []*t
 		require.NoError(t, err, "update timer failed")
 	}
 	receiveEvent(t, ctx, conns, make([]*timermodel.Timer, 0), compare)
-
 }
 
 var eventTypes = []timerevent.EventType{timerevent.Stop, timerevent.Reset, timerevent.Update}

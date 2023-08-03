@@ -92,17 +92,17 @@ func insertTimerTx(ctx context.Context, tx pgx.Tx, creator int64, timer *timermo
 func (s *Storage) InsertDateTimer(ctx context.Context, creator int64, timer *timermodel.CreateTimer) error {
 	tx, err := s.p.Pool.Begin(ctx)
 	if err != nil {
-		return Error(err, exception.NewCause("begin tx", "InsertTimer", _PROVIDER))
+		return Error(err, exception.NewCause("begin tx", "InsertDateTimer", _PROVIDER))
 	}
 	defer tx.Rollback(ctx)
 	timer.Type = timerfields.DATE
 	err = insertTimerTx(ctx, tx, creator, timer)
 	if err != nil {
-		return Error(err, exception.NewCause("insert date timer into storage", "InsertTimer", _PROVIDER))
+		return Error(err, exception.NewCause("insert date timer into storage", "InsertDateTimer", _PROVIDER))
 	}
 	err = tx.Commit(ctx)
 	if err != nil {
-		return Error(err, exception.NewCause("commit tx", "InsertTimer", _PROVIDER))
+		return Error(err, exception.NewCause("commit tx", "InsertDateTimer", _PROVIDER))
 	}
 	return nil
 }

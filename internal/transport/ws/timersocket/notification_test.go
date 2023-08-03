@@ -40,17 +40,21 @@ func TestNotificationStream(t *testing.T) {
 	}
 	conns := make([]*WsConn, 0)
 	for _, userId := range users {
-		conn := NewConn(t, server, userId)
-		go conn.Listen(t, ctx)
+		conn := NewConn(t, ctx, server, userId)
 		conns = append(conns, conn)
+		go conn.Listen(t, ctx)
 	}
 	notificationDelete(t, ctx, conns)
 	notificationExpired(t, ctx, conns)
 
-	for _, conn := range conns {
-		nts, err := notificationStorage.UserNotifications(ctx, conn.UserId())
+	for _, userId := range users {
+		nts, err := notificationStorage.UserNotifications(ctx, userId)
 		require.NoError(t, err, "failed get user notifications")
 		require.Equal(t, 0, len(nts), "handler insert notification while listener has been online")
+	}
+	for _, conn := range conns {
+		err := conn.Close()
+		require.NoError(t, err, "failed to close conn")
 	}
 }
 

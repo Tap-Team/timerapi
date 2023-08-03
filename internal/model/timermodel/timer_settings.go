@@ -1,9 +1,6 @@
 package timermodel
 
 import (
-	"time"
-
-	"github.com/Tap-Team/timerapi/internal/errorutils/timererror"
 	"github.com/Tap-Team/timerapi/internal/model/timermodel/timerfields"
 	"github.com/Tap-Team/timerapi/pkg/amidtime"
 	"github.com/Tap-Team/timerapi/pkg/validate"
@@ -38,8 +35,5 @@ func (t *TimerSettings) ValidatableVariables() []validate.Validatable {
 }
 
 func (t *TimerSettings) Validate() error {
-	if t.EndTime.Unix()-time.Now().Unix() < MIN_TIMER_DURATION {
-		return timererror.ExceptionWrongTimerTime()
-	}
 	return validate.ValidateFields(t)
 }

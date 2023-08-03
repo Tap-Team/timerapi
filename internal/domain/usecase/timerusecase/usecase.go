@@ -10,12 +10,13 @@ import (
 	"github.com/Tap-Team/timerapi/internal/model/timermodel"
 	"github.com/Tap-Team/timerapi/internal/model/timermodel/timerfields"
 	"github.com/Tap-Team/timerapi/internal/timerservice"
+	"github.com/Tap-Team/timerapi/pkg/amidtime"
 	"github.com/Tap-Team/timerapi/pkg/exception"
 	"github.com/Tap-Team/timerapi/pkg/saga"
 	"github.com/google/uuid"
 )
 
-const _PROVIDER = "internal/domain/timerusecase"
+const _PROVIDER = "internal/domain/usecase/timerusecase"
 
 type TimerStorage interface {
 	InsertDateTimer(ctx context.Context, creator int64, timer *timermodel.CreateTimer) error
@@ -190,8 +191,9 @@ func (uc *UseCase) Update(ctx context.Context, timerId uuid.UUID, userId int64, 
 	if err != nil {
 		return exception.Wrap(err, exception.NewCause("check access", "Update", _PROVIDER))
 	}
-	if timer.EndTime.Unix()-time.Now().Unix() < timermodel.MIN_TIMER_DURATION {
-		return timererror.ExceptionWrongTimerTime()
+	err = checkSettingsEndTime(timer, settings)
+	if err != nil {
+		return exception.Wrap(err, exception.NewCause("check timer end time", "Update", _PROVIDER))
 	}
 	err = uc.timerStorage.UpdateTimer(ctx, timerId, settings)
 	if err != nil {
@@ -208,6 +210,77 @@ func (uc *UseCase) Update(ctx context.Context, timerId uuid.UUID, userId int64, 
 	}
 	uc.esender.Send(timerevent.NewUpdate(timerId, *settings))
 	saga.OK()
+	return nil
+}
+
+func checkSettingsEndTime(timer *timermodel.Timer, settings *timermodel.TimerSettings) error {
+
+	// предполагаемое конечное время таймера
+	endTime := timer.EndTime
+	// предполагаемое новое конечное время таймера
+	settingsEndTime := settings.EndTime
+	// если на текущий момент таймер остановлен, то предполагаемое конечное время таймера равняется
+	// текущее конечное время таймер + время прошедшее с момента паузы
+	// с новым конечным временем таймера та же история
+	if timer.IsPaused {
+		timeInPause := time.Since(timer.PauseTime.T())
+		endTime = amidtime.DateTime(endTime.T().Add(timeInPause))
+		settingsEndTime = amidtime.DateTime(endTime.T().Add(timeInPause))
+	}
+	/*
+		если до конца таймера осталось меньше чем минимальное время таймера то метод вернёт ошибку, и таймер не обновится
+
+		пример 1:
+			минимальное время таймера = 30
+			конечное время таймера = 100
+			время сейчас = 60
+
+			100 - 60 = 40
+			40 > 30
+		Кейс прошел
+
+		пример 2:
+			минимальное время таймера = 30
+			конечное время таймера = 100
+			время сейчас = 71
+
+			100 - 71 = 29
+			29 < 30
+		Кейс не прошёл
+		пояснение для бубликов(время сейчас это мировое время UTC+0)
+	*/
+	if endTime.Unix()-time.Now().Unix() < timermodel.MIN_TIMER_DURATION {
+		return timererror.ExceptionWrongTimerTime()
+	}
+
+	// время проверяется только если оно отличается от конечного времени таймера
+	if timer.EndTime != settings.EndTime {
+		/*
+			если до момента обновленного конечного времени осталось меньше чем минимальное время таймера
+			метод вернёт ошибку
+
+			пример 1:
+				минимальное время таймера 30
+				новое конечное время = 100
+				время сейчас = 71
+				100-71 = 29
+				29<30
+			Отклонено
+
+			пример 2:
+				минимальное время таймера 30
+				новое конечное время = 100
+				время сейчас = 60
+				100-60 = 40
+				40>30
+			Успешно
+
+			пояснение для бубликов(время сейчас это мировое время UTC+0)
+		*/
+		if settingsEndTime.Unix()-time.Now().Unix() < timermodel.MIN_TIMER_DURATION {
+			return timererror.ExceptionWrongTimerTime()
+		}
+	}
 	return nil
 }
 

@@ -59,7 +59,7 @@ func (t *CreateTimer) Validate() error {
 	if t.EndTime.Unix()-t.StartTime.Unix() < MIN_TIMER_DURATION {
 		return timererror.ExceptionWrongTimerTime()
 	}
-	if t.EndTime.Unix()-time.Now().Unix() < MIN_TIMER_DURATION/2 {
+	if t.EndTime.Unix()-time.Now().Unix() < MIN_TIMER_DURATION/3*2 {
 		return timererror.ExceptionWrongTimerTime()
 	}
 	if t.ID == uuid.Nil {

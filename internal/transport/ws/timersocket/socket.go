@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/Tap-Team/timerapi/internal/model/notification"
 	"github.com/Tap-Team/timerapi/internal/model/timerevent"
@@ -87,7 +88,7 @@ func (s *TimerSocket) TimerWS(c echo.Context) error {
 	// parse user id from query
 	userId, err := strconv.ParseInt(c.QueryParam("vk_user_id"), 10, 64)
 	if err != nil {
-		return exception.Wrap(err, exception.NewCause("parse user id from request", "Websocket", _PROVIDER))
+		return exception.Wrap(err, exception.NewCause("parse user id from request", "TimerWS", _PROVIDER))
 	}
 	// create context with defer cancel
 	ctx, cancel := context.WithCancel(c.Request().Context())
@@ -96,9 +97,8 @@ func (s *TimerSocket) TimerWS(c echo.Context) error {
 	// create websocket connection
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
-		return exception.Wrap(err, exception.NewCause("listen service stream", "Websocker", _PROVIDER))
+		return exception.Wrap(err, exception.NewCause("listen service stream", "TimerWS", _PROVIDER))
 	}
-	defer ws.Close()
 
 	// create stream for stream timer events
 	/*
@@ -109,26 +109,22 @@ func (s *TimerSocket) TimerWS(c echo.Context) error {
 	*/
 	timerEventStream := s.streamer.NewStream()
 
-	// chan for listen all events from client
-	readStream := WSReadStream(ctx, ws)
-
 	// stream of expired timers by user
-	notficationStream := s.notificationStreamer.NewUserStream(userId)
+	notificationStream := s.notificationStreamer.NewUserStream(userId)
 
-	// close func
-	closeFunc := func() {
-		cancel()
-		timerEventStream.Close()
-		notficationStream.Close()
-	}
-	defer closeFunc()
-
+	var mu sync.Mutex
 	// set close handler
 	ws.SetCloseHandler(func(code int, text string) error {
-		closeFunc()
-		return nil
+		cancel()
+		timerEventStream.Close()
+		notificationStream.Close()
+		mu.Lock()
+		err := ws.WriteMessage(code, []byte(text))
+		mu.Unlock()
+		return err
 	})
-
+	// chan for listen all events from client
+	readStream := WSReadStream(ctx, ws)
 	// loop listen
 	for {
 		select {
@@ -137,13 +133,14 @@ func (s *TimerSocket) TimerWS(c echo.Context) error {
 		case <-ctx.Done():
 			return nil
 		// handle notification stream
-		case n, ok := <-notficationStream.Stream():
+		case n, ok := <-notificationStream.Stream():
 			if !ok {
 				continue
 			}
 			// on handle send expired event to client
+			mu.Lock()
 			ws.WriteJSON(n)
-
+			mu.Unlock()
 		// read stream
 		case event, ok := <-readStream:
 			if !ok {
@@ -162,7 +159,9 @@ func (s *TimerSocket) TimerWS(c echo.Context) error {
 				continue
 			}
 			// send event from stream
+			mu.Lock()
 			ws.WriteJSON(event)
+			mu.Unlock()
 		}
 	}
 }
@@ -179,6 +178,9 @@ func WSReadStream(ctx context.Context, ws *websocket.Conn) <-chan *timerevent.Su
 			default:
 				var event timerevent.SubscribeEvent
 				err := ws.ReadJSON(&event)
+				if _, ok := err.(*websocket.CloseError); ok {
+					break Loop
+				}
 				if err != nil {
 					continue
 				}

@@ -149,10 +149,28 @@ func middleWare(e *echo.Echo, config *config.Config) *echo.Group {
 	e.HTTPErrorHandler = echoconfig.ErrorHandler
 	swagger.New(e, config.Swagger)
 
+	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
-	e.Use(middleware.Logger())
+	loggerMiddleWare(e)
 
 	return e.Group("", vk.VkKeyHandler(config.VK.Key, config.VK.DebugKey))
+}
+
+func loggerMiddleWare(e *echo.Echo) {
+	skippedUrls := []string{
+		"/timers/user-created",
+		"/timers/user-subscriptions",
+	}
+	loggerConfig := middleware.DefaultLoggerConfig
+	loggerConfig.Skipper = func(c echo.Context) bool {
+		for _, url := range skippedUrls {
+			if c.Request().URL.Path == url {
+				return true
+			}
+		}
+		return false
+	}
+	e.Use(middleware.LoggerWithConfig(loggerConfig))
 }
 
 func tickerService(config config.TickerConfig) timerservice.TimerServiceClient {
