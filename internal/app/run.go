@@ -44,6 +44,7 @@ func Run() {
 	os.Setenv("TZ", "UTC")
 
 	config := config.FromFile("config/config.yaml")
+	profilier(config.Profilier.Address())
 	ctx := context.Background()
 
 	e := echo.New()

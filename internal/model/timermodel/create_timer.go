@@ -1,6 +1,8 @@
 package timermodel
 
 import (
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/Tap-Team/timerapi/internal/errorutils/timererror"
@@ -10,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const MIN_TIMER_DURATION = 30
+var MIN_TIMER_DURATION, _ = strconv.ParseInt(os.Getenv("MIN_TIMER_DURATION"), 10, 64)
 
 type CreateTimer struct {
 	ID          uuid.UUID               `json:"id"`

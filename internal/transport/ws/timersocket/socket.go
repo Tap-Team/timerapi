@@ -90,16 +90,15 @@ func (s *TimerSocket) TimerWS(c echo.Context) error {
 	if err != nil {
 		return exception.Wrap(err, exception.NewCause("parse user id from request", "TimerWS", _PROVIDER))
 	}
-	// create context with defer cancel
-	ctx, cancel := context.WithCancel(c.Request().Context())
-	defer cancel()
-
 	// create websocket connection
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		return exception.Wrap(err, exception.NewCause("listen service stream", "TimerWS", _PROVIDER))
 	}
-
+	defer ws.Close()
+	// create context with defer cancel
+	ctx, cancel := context.WithCancel(c.Request().Context())
+	// log.Printf("WEBSOCKET OPEN, %s", ws.RemoteAddr())
 	// create stream for stream timer events
 	/*
 		Stop
@@ -108,34 +107,35 @@ func (s *TimerSocket) TimerWS(c echo.Context) error {
 		Update
 	*/
 	timerEventStream := s.streamer.NewStream()
+	defer timerEventStream.Close()
 
 	// stream of expired timers by user
 	notificationStream := s.notificationStreamer.NewUserStream(userId)
+	defer notificationStream.Close()
 
 	var mu sync.Mutex
 	// set close handler
 	ws.SetCloseHandler(func(code int, text string) error {
-		cancel()
-		timerEventStream.Close()
-		notificationStream.Close()
 		mu.Lock()
 		err := ws.WriteMessage(code, []byte(text))
 		mu.Unlock()
+		cancel()
 		return err
 	})
 	// chan for listen all events from client
 	readStream := WSReadStream(ctx, ws)
 	// loop listen
+Loop:
 	for {
 		select {
-
 		// ctx done listener
 		case <-ctx.Done():
-			return nil
+			break Loop
 		// handle notification stream
 		case n, ok := <-notificationStream.Stream():
+			// log.Printf("WEBSOCKET %s, client notification %s", ws.LocalAddr(), n.Type())
 			if !ok {
-				continue
+				break Loop
 			}
 			// on handle send expired event to client
 			mu.Lock()
@@ -144,9 +144,10 @@ func (s *TimerSocket) TimerWS(c echo.Context) error {
 		// read stream
 		case event, ok := <-readStream:
 			if !ok {
-				continue
+				break Loop
 			}
 			// call subscribe/unsubscribe function in substream struct
+			// log.Printf("WEBSOCKET %s, client event %s", ws.LocalAddr(), event.Type)
 			switch event.Type {
 			case timerevent.Subscribe:
 				timerEventStream.Subscribe(event.TimerIds...)
@@ -155,15 +156,19 @@ func (s *TimerSocket) TimerWS(c echo.Context) error {
 			}
 		// listen timers events from timers
 		case event, ok := <-timerEventStream.Stream():
+			// log.Printf("WEBSOCKET %s, event: %s, ok: %t", ws.LocalAddr(), event.Type(), ok)
 			if !ok {
-				continue
+				break Loop
 			}
+			// log.Printf("WEBSOCKET EVENT %s, %s", event.Type(), ws.RemoteAddr())
 			// send event from stream
 			mu.Lock()
 			ws.WriteJSON(event)
 			mu.Unlock()
 		}
 	}
+	// log.Printf("WEBSOCKET CLOSED, %s", ws.RemoteAddr())
+	return nil
 }
 
 // stream which read all events from websocket connection and write it to created chan
@@ -188,6 +193,7 @@ func WSReadStream(ctx context.Context, ws *websocket.Conn) <-chan *timerevent.Su
 			}
 		}
 		close(ech)
+		// log.Printf("READ CLOSED, %s", ws.RemoteAddr())
 	}()
 	return ech
 }

@@ -166,8 +166,8 @@ Loop:
 		case <-ctx.Done():
 			break Loop
 		default:
-			_, b, err := ws.ws.ReadMessage()
-			if errors.Is(err, net.ErrClosed) {
+			code, b, err := ws.ws.ReadMessage()
+			if errors.Is(err, net.ErrClosed) || websocket.IsCloseError(err, code) {
 				break Loop
 			}
 			if err != nil {
@@ -259,6 +259,10 @@ func (ws *WsConn) Close() error {
 	err = ws.ws.WriteMessage(websocket.CloseMessage, cm)
 	if err != nil {
 		return fmt.Errorf("failed to send close message, %s", err)
+	}
+	err = ws.ws.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close websocket connection, %s", err)
 	}
 	return nil
 }

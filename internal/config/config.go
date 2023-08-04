@@ -98,6 +98,15 @@ func (s SwaggerConfig) Host() string {
 	return s.ProdHost
 }
 
+type ProfilierConfig struct {
+	Host string `yaml:"host"`
+	Port int    `yaml:"port"`
+}
+
+func (c ProfilierConfig) Address() string {
+	return fmt.Sprintf("%s:%d", c.Host, c.Port)
+}
+
 type Config struct {
 	Redis              RedisConfig              `yaml:"redis"`
 	Postgres           PostgresConfig           `yaml:"postgres"`
@@ -106,6 +115,7 @@ type Config struct {
 	Ticker             TickerConfig             `yaml:"ticker"`
 	NotificationServer NotificationServerConfig `yaml:"notification_server"`
 	Swagger            SwaggerConfig            `yaml:"swagger"`
+	Profilier          ProfilierConfig          `yaml:"profilier"`
 }
 
 func New(
@@ -114,13 +124,15 @@ func New(
 	server ServerConfig,
 	ticker TickerConfig,
 	swagger SwaggerConfig,
+	profilier ProfilierConfig,
 ) *Config {
 	return &Config{
-		Redis:    redis,
-		Postgres: postgres,
-		Server:   server,
-		Ticker:   ticker,
-		Swagger:  swagger,
+		Redis:     redis,
+		Postgres:  postgres,
+		Server:    server,
+		Ticker:    ticker,
+		Swagger:   swagger,
+		Profilier: profilier,
 	}
 }
 

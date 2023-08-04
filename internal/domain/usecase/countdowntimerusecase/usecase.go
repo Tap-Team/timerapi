@@ -158,7 +158,7 @@ func (uc *UseCase) Reset(ctx context.Context, timerId uuid.UUID, userId int64) (
 	// update time in database
 	err = uc.updater.UpdateTime(ctx, timerId, endTime)
 	if err != nil {
-		return nil, exception.Wrap(err, exception.Wrap(err, exception.NewCause("update timer time", "Reset", _PROVIDER)))
+		return nil, exception.Wrap(err, exception.NewCause("update timer time", "Reset", _PROVIDER))
 	}
 	saga.Register(func() { uc.updater.UpdateTime(ctx, timerId, oldTimerEndTime) })
 
@@ -166,7 +166,7 @@ func (uc *UseCase) Reset(ctx context.Context, timerId uuid.UUID, userId int64) (
 		pauseTime = amidtime.DateTime(time.Unix(endTime.Unix()-timer.Duration, 0))
 		err = uc.updater.UpdatePauseTime(ctx, timer.ID, pauseTime, true)
 		if err != nil {
-			return nil, exception.Wrap(err, exception.Wrap(err, exception.NewCause("update timer pause time", "Reset", _PROVIDER)))
+			return nil, exception.Wrap(err, exception.NewCause("update timer pause time", "Reset", _PROVIDER))
 		}
 	}
 	saga.OK()

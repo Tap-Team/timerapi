@@ -217,22 +217,18 @@ func deleteNotification(t *testing.T, ctx context.Context, userIds []int64) {
 			UserId: userId,
 			Timers: timers,
 		})
-		go func(userId int64) {
-			defer wg.Done()
-			// for create notification we need create timer and delete
-			// for receive subscribe we need subscribe on timer
-			for _, timer := range timers {
-				require.False(t, timer.Creator == userId, "timer creator equal userid ")
-				_, err := createTimer(ctx, timer.Creator, timer.CreateTimer())
-				require.NoError(t, err, "failed to create timer")
-				_, err = subscribe(ctx, userId, timer.ID)
-				require.NoError(t, err, "subscribe failed")
-				_, err = deleteTimer(ctx, timer.Creator, timer.ID)
-				require.NoError(t, err, "delete timer failed")
-			}
-		}(userId)
+		// for create notification we need create timer and delete
+		// for receive subscribe we need subscribe on timer
+		for _, timer := range timers {
+			require.False(t, timer.Creator == userId, "timer creator equal userid ")
+			_, err := createTimer(ctx, timer.Creator, timer.CreateTimer())
+			require.NoError(t, err, "failed to create timer")
+			_, err = subscribe(ctx, userId, timer.ID)
+			require.NoError(t, err, "subscribe failed")
+			_, err = deleteTimer(ctx, timer.Creator, timer.ID)
+			require.NoError(t, err, "delete timer failed")
+		}
 	}
-	wg.Wait()
 
 	time.Sleep(time.Second)
 
@@ -257,19 +253,15 @@ func expiredNotification(t *testing.T, ctx context.Context, userIds []int64) {
 			UserId: userId,
 			Timers: timers,
 		})
-		go func(userId int64) {
-			defer wg.Done()
-			// for create notification we need create timer and delete
-			// for receive subscribe we need subsccribe on timer
-			for _, timer := range timers {
-				_, err := createTimer(ctx, timer.Creator, timer.CreateTimer())
-				require.NoError(t, err, "failed to create timer")
-				_, err = subscribe(ctx, userId, timer.ID)
-				require.NoError(t, err, "subscribe failed")
-			}
-		}(userId)
+		// for create notification we need create timer and delete
+		// for receive subscribe we need subsccribe on timer
+		for _, timer := range timers {
+			_, err := createTimer(ctx, timer.Creator, timer.CreateTimer())
+			require.NoError(t, err, "failed to create timer")
+			_, err = subscribe(ctx, userId, timer.ID)
+			require.NoError(t, err, "subscribe failed")
+		}
 	}
-	wg.Wait()
 
 	time.Sleep(time.Second * (time.Duration(duration) + 1))
 

@@ -202,10 +202,10 @@ func (uc *UseCase) Update(ctx context.Context, timerId uuid.UUID, userId int64, 
 	saga.Register(func() {
 		uc.timerStorage.UpdateTimer(ctx, timer.ID, timermodel.NewTimerSettings(timer.Name, timer.Description, timer.Color, timer.WithMusic, timer.EndTime))
 	})
-	if timer.EndTime != settings.EndTime {
+	if timer.EndTime != settings.EndTime && !timer.IsPaused {
 		err = uc.timerService.Update(ctx, timerId, settings.EndTime.Unix())
 		if err != nil {
-			return exception.Wrap(err, exception.Wrap(err, exception.NewCause("update end time in timerservice", "Update", _PROVIDER)))
+			return exception.Wrap(err, exception.NewCause("update end time in timerservice", "Update", _PROVIDER))
 		}
 	}
 	uc.esender.Send(timerevent.NewUpdate(timerId, *settings))
