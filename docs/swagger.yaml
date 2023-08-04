@@ -178,7 +178,6 @@ definitions:
       withMusic:
         type: boolean
     type: object
-host: 31.129.99.174:12700
 info:
   contact: {}
   license:

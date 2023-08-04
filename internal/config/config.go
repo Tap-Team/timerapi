@@ -76,15 +76,6 @@ func (u TickerConfig) URL() string {
 	return u.DockerURL
 }
 
-type NotificationServerConfig struct {
-	Host string `yaml:"host"`
-	Port int64  `yaml:"port"`
-}
-
-func (c NotificationServerConfig) Address() string {
-	return fmt.Sprintf("%s:%d", c.Host, c.Port)
-}
-
 type SwaggerConfig struct {
 	ProdHost  string `yaml:"host"`
 	LocalHost string `yaml:"localhost"`
@@ -108,14 +99,13 @@ func (c ProfilierConfig) Address() string {
 }
 
 type Config struct {
-	Redis              RedisConfig              `yaml:"redis"`
-	Postgres           PostgresConfig           `yaml:"postgres"`
-	Server             ServerConfig             `yaml:"server"`
-	VK                 VkConfig                 `yaml:"vk"`
-	Ticker             TickerConfig             `yaml:"ticker"`
-	NotificationServer NotificationServerConfig `yaml:"notification_server"`
-	Swagger            SwaggerConfig            `yaml:"swagger"`
-	Profilier          ProfilierConfig          `yaml:"profilier"`
+	Redis     RedisConfig     `yaml:"redis"`
+	Postgres  PostgresConfig  `yaml:"postgres"`
+	Server    ServerConfig    `yaml:"server"`
+	VK        VkConfig        `yaml:"vk"`
+	Ticker    TickerConfig    `yaml:"ticker"`
+	Swagger   SwaggerConfig   `yaml:"swagger"`
+	Profilier ProfilierConfig `yaml:"profilier"`
 }
 
 func New(

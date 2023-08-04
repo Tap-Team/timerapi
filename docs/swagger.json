@@ -10,7 +10,6 @@
         },
         "version": "1.0"
     },
-    "host": "31.129.99.174:12700",
     "basePath": "/",
     "paths": {
         "/notifications": {

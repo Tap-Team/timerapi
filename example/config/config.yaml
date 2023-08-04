@@ -1,6 +1,7 @@
 vk:
   secret_key: <VK MINI APP KEY, ONLY USING IN LAUNCH PARAMS MIDDLEWARE>
   debug_key: <DEBUG KEY, ONLY IN DEBUG MODE, SET QUERY PARAM 'debug' TO debug_key VALUE TO SKIP VK MIDDLEWARE>
+  bot_token: <VK BOT TOKEN>
 postgres:
   local_url:  <LOCAL POSTGRES URL>
   docker_url: <POSTGRES URL IN DOCKER MODE>
@@ -13,3 +14,9 @@ server:
 ticker:
   local_url:  <TICKER SERVICE LOCAL URL>
   docker_url: <TICKER SERVICE IN DOCKER URL>
+swagger:
+  localhost: <SWAGGER HOST> EXAMPLE "0.0.0.0:12700"
+  host: PRODUCTION HOST yoursite.aboba.ru
+profilier:
+  host: <PROFILIER HOST>
+  port: <PROFILIER PORT>

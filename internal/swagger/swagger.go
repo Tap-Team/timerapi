@@ -13,7 +13,6 @@ import (
 //	@license.name	Apache 2.0
 //	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
 //
-//	@host			31.129.99.174:12700
 //	@BasePath		/
 func New(e *echo.Echo, config config.SwaggerConfig) {
 	docs.SwaggerInfo.Host = config.Host()
