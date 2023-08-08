@@ -117,7 +117,7 @@ func (sh *StreamHandler) notification(ctx context.Context, ntion notification.No
 		if ntion.Type() == notification.Delete && ntion.Timer().Creator == userId {
 			continue
 		}
-		// if subscriber online send timerId to stream
+		// if subscriber online send notification to stream
 		if streamp, ok := sh.subscribers[userId]; ok {
 			for _, stream := range streamp {
 				stream.ch <- ntion

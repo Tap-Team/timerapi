@@ -2,7 +2,7 @@
 // Source: ./internal/transport/bot/run.go
 
 // Package bot is a generated GoMock package.
-package bot
+package botnotification
 
 import (
 	reflect "reflect"

@@ -1,4 +1,4 @@
-package bot
+package botnotification
 
 import (
 	"context"
@@ -39,7 +39,7 @@ func message(n notification.Notification) (string, error) {
 func deleteMessage(n notification.Notification) string {
 	name := n.Timer().Name
 	if len(name) == 0 {
-		name = "<Без названия>"
+		name = "Без названия"
 	}
 	return fmt.Sprintf(`Здравствуйте, уведомляю вас о том что таймер %s был удалён`, name)
 }
@@ -47,7 +47,7 @@ func deleteMessage(n notification.Notification) string {
 func expiredMessage(n notification.Notification) string {
 	name := n.Timer().Name
 	if len(name) == 0 {
-		name = "<Без названия>"
+		name = "Без названия"
 	}
-	return fmt.Sprintf(`Здравствуйте, похоже что у вас истёк таймер %s`, name)
+	return fmt.Sprintf(`Здравствуйте, уведомляю о том что таймер %s истёк`, name)
 }

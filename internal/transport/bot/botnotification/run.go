@@ -1,4 +1,4 @@
-package bot
+package botnotification
 
 import (
 	"context"
@@ -18,16 +18,20 @@ type NotificationStream interface {
 	}
 }
 
-type Bot struct {
+type NotificationBot interface {
+	Run(context.Context)
+}
+
+type notificationBot struct {
 	sender             MessageSender
 	notificationStream NotificationStream
 }
 
-func New(sender MessageSender, notificationStream NotificationStream) *Bot {
-	return &Bot{sender: sender, notificationStream: notificationStream}
+func New(sender MessageSender, notificationStream NotificationStream) NotificationBot {
+	return &notificationBot{sender: sender, notificationStream: notificationStream}
 }
 
-func (b *Bot) Run(ctx context.Context) {
+func (b *notificationBot) Run(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	stream := b.notificationStream.NewStream()

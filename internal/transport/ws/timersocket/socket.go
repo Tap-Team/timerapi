@@ -167,7 +167,7 @@ Loop:
 			mu.Unlock()
 		}
 	}
-	// log.Printf("WEBSOCKET CLOSED, %s", ws.RemoteAddr())
+	c.Logger().Infof("WEBSOCKET CLOSED, %s", ws.RemoteAddr())
 	return nil
 }
 

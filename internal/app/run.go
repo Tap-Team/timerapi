@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/SevereCloud/vksdk/v2/api"
@@ -105,45 +104,22 @@ func Run() {
 	notificationhandler.Init(g, notificationUseCase)
 	timersocket.Init(g, eventSender, notificationStream)
 
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		addr := config.Server.Address()
+	botmanager := bot.NewManager(api.NewVK(config.VK.BotToken))
+	go botmanager.RunMessageHandlers()
+	go botmanager.RunNotificationBot(ctx, notificationStream)
 
-		h2s := &http2.Server{
-			IdleTimeout: 10 * time.Second,
-		}
-		s := http.Server{
-			Addr:    addr,
-			Handler: h2c.NewHandler(e, h2s),
-		}
-		log.Printf("ECHO APP STARTED ON %s", addr)
-		err := s.ListenAndServe()
-		log.Fatalf("api server failed start failed, %s", err)
-		wg.Done()
-	}()
+	addr := config.Server.Address()
 
-	// 211250278
-	go func() {
-		b := bot.New(api.NewVK(config.VK.BotToken), notificationStream)
-		b.Run(ctx)
-		wg.Done()
-	}()
-
-	// go func() {
-	// 	notificationService := notificationservice.New(notificationStream)
-
-	// 	addr := config.NotificationServer.Address()
-	// 	server := grpcserver.New(
-	// 		&grpcserver.Services{
-	// 			NotificationService: notificationService,
-	// 		},
-	// 	)
-	// 	err := server.ListenAndServe(addr)
-	// 	log.Fatalf("notification server start failed, %s", err)
-	// 	wg.Done()
-	// }()
-	wg.Wait()
+	h2s := &http2.Server{
+		IdleTimeout: 10 * time.Second,
+	}
+	s := http.Server{
+		Addr:    addr,
+		Handler: h2c.NewHandler(e, h2s),
+	}
+	log.Printf("ECHO APP STARTED ON %s", addr)
+	err = s.ListenAndServe()
+	log.Fatalf("api server failed start failed, %s", err)
 }
 
 func middleWare(e *echo.Echo, config *config.Config) *echo.Group {

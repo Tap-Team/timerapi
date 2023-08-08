@@ -1,4 +1,4 @@
-package bot_test
+package botnotification_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/Tap-Team/timerapi/internal/model/notification"
 	"github.com/Tap-Team/timerapi/internal/testdatamodule"
-	"github.com/Tap-Team/timerapi/internal/transport/bot"
+	"github.com/Tap-Team/timerapi/internal/transport/bot/botnotification"
 	"github.com/golang/mock/gomock"
 )
 
@@ -44,10 +44,10 @@ func TestSend(t *testing.T) {
 	defer cancel()
 	ctrl := gomock.NewController(t)
 
-	sender := bot.NewMockMessageSender(ctrl)
+	sender := botnotification.NewMockMessageSender(ctrl)
 	fakeStream := make(FakeNotificationStream, 1)
 
-	bot := bot.New(sender, fakeStream)
+	bot := botnotification.New(sender, fakeStream)
 	timer := *testdatamodule.RandomTimer()
 	var ntion notification.Notification
 	if rand.Int63()%2 == 0 {
